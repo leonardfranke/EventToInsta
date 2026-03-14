@@ -14,7 +14,7 @@ namespace EventToInsta
 
         public static async Task<IEnumerable<MatchData>> LoadMatches()
         {
-            var matchesRes = await _client.Request("rest/club/id/621/actualmatches?justHome=true&rangeDays=16").GetJsonAsync<MatchesResponse>();
+            var matchesRes = await _client.Request("rest/club/id/621/actualmatches?justHome=true&rangeDays=8").GetJsonAsync<MatchesResponse>();
             var matches = new List<MatchData>();
             foreach(var matchData in matchesRes.Data.Matches.Where(match => match.Verzicht == false))
             {
