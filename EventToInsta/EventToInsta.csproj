@@ -22,4 +22,15 @@
 	  </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="Images\Herren\Bild1.png" />
+    <Content Remove="Images\Herren\Bild2.png" />
+    <Content Remove="Images\Herren\IMG_0056.JPG" />
+    <Content Remove="Images\Herren\IMG_0063.JPG" />
+    <Content Remove="Images\Herren\IMG_0196.JPG" />
+    <Content Remove="Images\Herren\IMG_0243.JPG" />
+    <Content Remove="Images\Herren\IMG_9833.JPG" />
+    <Content Remove="Images\Herren\IMG_9850.JPG" />
+  </ItemGroup>
+
 </Project>

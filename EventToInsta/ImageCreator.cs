@@ -60,7 +60,7 @@ namespace EventToInsta
             var opponentText = match.OpponentName.Replace("(ak)", string.Empty, true, culture: null);
             var teamsText = new RichString().Alignment(TextAlignment.Center).Bold().FontFamily("Anton").TextColor(_whiteColor).FontSize(60).Add($"Herren gegen {opponentText}");
             var teamsTextX = (bitmap.Width - teamsText.MeasuredWidth) / 2f;
-            if (teamsTextX < 20)
+            if (teamsTextX < 10)
             {
                 teamsText = new RichString().Alignment(TextAlignment.Center).Bold().FontFamily("Anton").TextColor(_whiteColor).FontSize(60).Add($"Herren gegen {match.OpponentNameSmall}");
                 teamsTextX = (bitmap.Width - teamsText.MeasuredWidth) / 2f;
