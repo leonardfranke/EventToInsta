@@ -30,6 +30,9 @@ public class UploadPostPublisherTests
     private static StoryPost Post(string key = "jugend-result-2026-11-21") =>
         new(key, [new RenderedStory("a.jpg", JpegA), new RenderedStory("b.jpg", JpegB)]);
 
+    private static string[] Keys(FakeHandler handler) =>
+        handler.Calls.Select(c => c.Request.Headers.GetValues("Idempotency-Key").Single()).ToArray();
+
     private static (UploadPostPublisher, FakeHandler) Create(Func<int, HttpResponseMessage> respond)
     {
         var handler = new FakeHandler(respond);
@@ -50,14 +53,53 @@ public class UploadPostPublisherTests
 
         await publisher.PublishAsync(Post());
 
-        Assert.Equal(2, handler.Calls.Count);
-        Assert.Equal("jugend-result-2026-11-21-1", handler.Calls[0].Request.Headers.GetValues("Idempotency-Key").Single());
-        Assert.Equal("jugend-result-2026-11-21-2", handler.Calls[1].Request.Headers.GetValues("Idempotency-Key").Single());
+        Assert.Equal(new[] { "jugend-result-2026-11-21-a", "jugend-result-2026-11-21-b" }, Keys(handler));
         Assert.All(handler.Calls, c =>
         {
             Assert.Equal(HttpMethod.Post, c.Request.Method);
             Assert.Equal("https://api.upload-post.com/api/upload_photos", c.Request.RequestUri!.ToString());
         });
+    }
+
+    [Fact]
+    public async Task Publish_KeyFollowsImageIdentity_NotPosition()
+    {
+        // Wiederholungslauf mit geänderter Liste: ein neues Bild vorne darf nicht den Key des alten erben.
+        var (publisher, handler) = Create(_ => Json(HttpStatusCode.OK, """{"success": true}"""));
+
+        await publisher.PublishAsync(new StoryPost("k", [new RenderedStory("b.jpg", JpegB)]));
+        await publisher.PublishAsync(new StoryPost("k", [new RenderedStory("new.jpg", JpegA), new RenderedStory("b.jpg", JpegB)]));
+
+        Assert.Equal(new[] { "k-b", "k-new", "k-b" }, Keys(handler));
+    }
+
+    [Fact]
+    public async Task Publish_DuplicateFileNames_ThrowsBeforeAnyUpload()
+    {
+        var (publisher, handler) = Create(_ => Json(HttpStatusCode.OK, """{"success": true}"""));
+
+        await Assert.ThrowsAsync<ArgumentException>(() => publisher.PublishAsync(
+            new StoryPost("k", [new RenderedStory("a.jpg", JpegA), new RenderedStory("a.jpg", JpegB)])));
+
+        Assert.Empty(handler.Calls);
+    }
+
+    [Fact]
+    public async Task Publish_NetworkError_KeepsInnerException()
+    {
+        var handler = new ThrowingHandler(new HttpRequestException("kaputt"));
+        var publisher = new UploadPostPublisher(new HttpClient(handler), "test-key", "Dachse");
+
+        var ex = await Assert.ThrowsAsync<UploadFailedException>(() => publisher.PublishAsync(Post()));
+
+        Assert.IsType<HttpRequestException>(ex.InnerException);
+        Assert.Contains("kaputt", ex.Message);
+    }
+
+    private sealed class ThrowingHandler(Exception error) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            Task.FromException<HttpResponseMessage>(error);
     }
 
     [Fact]

@@ -26,11 +26,11 @@ public class PreviewPlannerTests
         Assert.Equal("herren-preview-3.jpg", Assert.IsType<HerrenPreview>(plan[1]).FileName);
         var h = Assert.IsType<JugendPreview>(plan[2]);
         Assert.True(h.Home);
-        Assert.Equal("jugend-preview-heim-1.jpg", h.FileName);
+        Assert.Matches(@"^jugend-preview-heim-1-[0-9a-f]{8}\.jpg$", h.FileName);
         Assert.Equal(new[] { 1, 4 }, h.Games.Select(g => g.MatchId).ToArray());
         var a = Assert.IsType<JugendPreview>(plan[3]);
         Assert.False(a.Home);
-        Assert.Equal("jugend-preview-auswaerts-1.jpg", a.FileName);
+        Assert.Matches(@"^jugend-preview-auswaerts-1-[0-9a-f]{8}\.jpg$", a.FileName);
         Assert.Equal(Today, a.WeekStart);
         Assert.Equal(new DateOnly(2026, 11, 22), a.WeekEnd);
     }
@@ -74,6 +74,6 @@ public class PreviewPlannerTests
         Assert.Equal(new[] { 4, 3 }, plan.Select(p => p.Games.Count).ToArray());
         Assert.Equal(new[] { 1, 2 }, plan.Select(p => p.Part).ToArray());
         Assert.All(plan, p => Assert.Equal(2, p.PartCount));
-        Assert.Equal("jugend-preview-heim-2.jpg", plan[1].FileName);
+        Assert.Matches(@"^jugend-preview-heim-2-[0-9a-f]{8}\.jpg$", plan[1].FileName);
     }
 }

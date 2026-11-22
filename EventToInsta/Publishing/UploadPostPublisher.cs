@@ -4,7 +4,7 @@ using EventToInsta.Rendering;
 
 namespace EventToInsta.Publishing;
 
-public sealed class UploadFailedException(string message) : Exception(message);
+public sealed class UploadFailedException(string message, Exception? inner = null) : Exception(message, inner);
 
 public sealed class UploadPostPublisher(HttpClient http, string apiKey, string user) : IStoryPublisher
 {
@@ -13,9 +13,21 @@ public sealed class UploadPostPublisher(HttpClient http, string apiKey, string u
 
     public async Task PublishAsync(StoryPost post, CancellationToken ct = default)
     {
-        for (var i = 0; i < post.Images.Count; i++)
-            await UploadAsync(post.Images[i], $"{post.Key}-{i + 1}", ct);
+        var duplicate = post.Images.GroupBy(i => i.FileName).FirstOrDefault(g => g.Count() > 1);
+        if (duplicate is not null)
+            throw new ArgumentException($"Beitrag {post.Key}: Dateiname {duplicate.Key} kommt mehrfach vor.", nameof(post));
+
+        foreach (var image in post.Images)
+            await UploadAsync(image, IdempotencyKey(post.Key, image), ct);
     }
+
+    /// <summary>
+    /// Je Bild aus stabiler Identität (Dateiname, bei Jugend-Teilen mit Hash der Spiele), nie aus der
+    /// Position: Ändert sich die Bilderliste zwischen Fehlschlag und Wiederholung, bekäme sonst ein neues
+    /// Bild den Key eines alten, und upload-post.com würde es als bereits erledigt verwerfen.
+    /// </summary>
+    internal static string IdempotencyKey(string postKey, RenderedStory image) =>
+        $"{postKey}-{Path.GetFileNameWithoutExtension(image.FileName)}";
 
     private async Task UploadAsync(RenderedStory image, string idempotencyKey, CancellationToken ct)
     {
@@ -38,7 +50,7 @@ public sealed class UploadPostPublisher(HttpClient http, string apiKey, string u
         }
         catch (HttpRequestException ex)
         {
-            throw new UploadFailedException($"Upload von {image.FileName} fehlgeschlagen: {ex.Message}");
+            throw new UploadFailedException($"Upload von {image.FileName} fehlgeschlagen: {ex.Message}", ex);
         }
 
         using (response)

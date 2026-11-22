@@ -72,7 +72,7 @@ public sealed class JugendStoryTests : IDisposable
 
         var story = await Renderer().RenderAsync(new JugendPreview(true, WeekStart, WeekEnd, games, 1, 2));
 
-        Assert.Equal("jugend-preview-heim-1.jpg", story.FileName);
+        Assert.Matches(@"^jugend-preview-heim-1-[0-9a-f]{8}\.jpg$", story.FileName);
         using var _ = Decode(story);
     }
 
@@ -85,7 +85,7 @@ public sealed class JugendStoryTests : IDisposable
 
         var story = await Renderer().RenderAsync(new JugendPreview(false, WeekStart, WeekEnd, games, 1, 1));
 
-        Assert.Equal("jugend-preview-auswaerts-1.jpg", story.FileName);
+        Assert.Matches(@"^jugend-preview-auswaerts-1-[0-9a-f]{8}\.jpg$", story.FileName);
         using var _ = Decode(story);
     }
 
@@ -102,7 +102,7 @@ public sealed class JugendStoryTests : IDisposable
 
         var story = await Renderer().RenderAsync(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
 
-        Assert.Equal("jugend-result-2026-11-28-1.jpg", story.FileName);
+        Assert.Matches(@"^jugend-result-2026-11-28-1-[0-9a-f]{8}\.jpg$", story.FileName);
         using var _ = Decode(story);
     }
 

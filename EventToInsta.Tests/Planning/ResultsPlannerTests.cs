@@ -44,7 +44,7 @@ public class ResultsPlannerTests
     {
         var games = new[] { GameFactory.Make(2, At(11), result: S), GameFactory.Make(1, At(10), result: S) };
         var j = Assert.Single(ResultsPlanner.Plan(games, At(15), Fresh, 6).Jugend);
-        Assert.Equal("jugend-result-2026-11-22-1.jpg", j.FileName);
+        Assert.Matches(@"^jugend-result-2026-11-22-1-[0-9a-f]{8}\.jpg$", j.FileName);
         Assert.Equal(Day, j.Day);
         Assert.Equal(new[] { 1, 2 }, j.Games.Select(g => g.MatchId).ToArray());
         Assert.Equal(1, j.PartCount);
@@ -100,6 +100,6 @@ public class ResultsPlannerTests
         var games = Enumerable.Range(1, 7).Select(i => GameFactory.Make(i, At(8 + i), result: S)).ToArray();
         var plan = ResultsPlanner.Plan(games, At(20), Fresh, 6);
         Assert.Equal(new[] { 4, 3 }, plan.Jugend.Select(j => j.Games.Count).ToArray());
-        Assert.Equal("jugend-result-2026-11-22-2.jpg", plan.Jugend[1].FileName);
+        Assert.Matches(@"^jugend-result-2026-11-22-2-[0-9a-f]{8}\.jpg$", plan.Jugend[1].FileName);
     }
 }
