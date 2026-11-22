@@ -170,6 +170,29 @@ public sealed class JugendStoryTests : IDisposable
             Assert.True(CountRed(bmp, card) > 500, "Sponsorlogo in jeder Karte erwartet");
     }
 
+    [Theory]
+    [InlineData("@ TV Bad Rothenfelde")]
+    [InlineData("@ Artland Dragons III")]
+    public void ResultCardWithSponsor_CommonNamesFitWithoutEllipsis(string line)
+    {
+        // Ungünstigste Spielstand-Spalte („100:100“ / „NIEDERLAGE“) neben dem Sponsor.
+        var width = JugendStory.ResultNameWidthWithSponsor(JugendStory.ScoreColumnWidth([]));
+        var natural = StoryText.NaturalWidth(line, JugendStory.ResultNameStyle());
+
+        Assert.True(natural * JugendStory.ResultNameMinScale <= width,
+            $"„{line}“ braucht {natural * JugendStory.ResultNameMinScale:F0} px, verfügbar {width:F0} px");
+    }
+
+    [Fact]
+    public void ScoreColumnWidth_IsSameForWinAndLossAndCoversWorstCase()
+    {
+        var win = JugendStory.ScoreColumnWidth([Jugend(1, "U12", result: new Score(54, 38))]);
+        var loss = JugendStory.ScoreColumnWidth([Jugend(1, "U12", result: new Score(38, 54))]);
+
+        Assert.Equal(win, loss);
+        Assert.True(JugendStory.ScoreColumnWidth([Jugend(1, "U12", result: new Score(108, 100))]) >= win);
+    }
+
     [Fact]
     public void Layout_MaxCards_FitsBetweenHeaderAndFooterWithoutOverlap()
     {

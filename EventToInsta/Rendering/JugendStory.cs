@@ -40,6 +40,12 @@ public static class JugendStory
     private const float SponsorLogoHeight = 22 * S;
     private const float SponsorLabelGap = 12;
 
+    // Ergebniskarte mit Sponsor (Entwurf A in sponsor-results.html): kleinerer Sponsorblock, engere Abstände,
+    // Gegnername darf stärker schrumpfen, damit übliche Vereinsnamen ungekürzt bleiben.
+    private const float ResultSponsorScale = 0.75f;
+    private const float ResultSponsorGap = 5 * S;
+    internal const float ResultNameMinScale = 0.7f;
+
     // Fuß
     private const float FooterBaseline = Theme.Height - 78;
 
@@ -72,11 +78,12 @@ public static class JugendStory
         DrawHeader(c, "ERGEBNISSE", ResultDateLine(r));
 
         var layout = Layout(r.Games.Count);
+        var scoreColumnWidth = ScoreColumnWidth(r.Games);
         for (var i = 0; i < r.Games.Count; i++)
         {
             var g = r.Games[i];
             using var sponsor = sponsorFor(g.AgeClass);
-            DrawResultCard(c, layout.Cards[i], g, sponsor);
+            DrawResultCard(c, layout.Cards[i], g, sponsor, scoreColumnWidth);
         }
 
         DrawFooter(c, "STARK GESPIELT, TEAMS!");
@@ -205,23 +212,51 @@ public static class JugendStory
             info, Body(700, 9.5f * S, Theme.MutedText));
     }
 
-    private static void DrawResultCard(SKCanvas c, SKRect card, Game g, SKBitmap? sponsor)
+    private static void DrawResultCard(SKCanvas c, SKRect card, Game g, SKBitmap? sponsor, float scoreColumnWidth)
     {
         var win = g.IsWin == true;
         DrawCardBody(c, card, border: win ? Theme.Blue : Theme.Grey);
-        var age = SKRect.Create(card.Left + Border + PadX, card.MidY - AgeSize / 2, AgeSize, AgeSize);
+        var age = ResultAgeBox(card);
         DrawAge(c, age, g.AgeClass, 14 * S);
 
         var color = win ? Theme.Blue : Theme.LossText;
+        var scoreRight = card.Right - PadX;
         var right = DrawResultColumn(c, $"{g.OwnPoints}:{g.OpponentPoints}", win ? "SIEG" : "NIEDERLAGE",
-            color, card.Right - PadX, card.MidY) - ColumnGap;
-        // Sponsor sitzt zwischen Gegnerblock und Spielstand, gleiche Gestaltung wie in der Vorschau.
+            color, scoreRight, card.MidY) - ColumnGap;
+        var minScale = 0.8f;
         if (sponsor != null)
-            right = DrawSponsor(c, sponsor, right, card.MidY) - ColumnGap;
+        {
+            // Feste Spaltenbreite für den Spielstand, damit die Sponsorspalte auf allen Karten an derselben Stelle steht.
+            var sponsorRight = scoreRight - scoreColumnWidth - ResultSponsorGap;
+            right = DrawSponsor(c, sponsor, sponsorRight, card.MidY, ResultSponsorScale) - ResultSponsorGap;
+            minScale = ResultNameMinScale;
+        }
 
         DrawTwoLines(c, age.Right + ColumnGap, right, card.MidY,
-            OpponentLine(g), Display(13 * S, Theme.Blue),
-            g.IsHome ? "Heim" : "Auswärts", Body(700, 9 * S, Theme.MutedText));
+            OpponentLine(g), ResultNameStyle(),
+            g.IsHome ? "Heim" : "Auswärts", Body(700, 9 * S, Theme.MutedText), minScale);
+    }
+
+    private static SKRect ResultAgeBox(SKRect card) =>
+        SKRect.Create(card.Left + Border + PadX, card.MidY - AgeSize / 2, AgeSize, AgeSize);
+
+    internal static Style ResultNameStyle() => Display(13 * S, Theme.Blue);
+
+    /// <summary>Breite für Gegner und Infozeile in einer Ergebniskarte mit Sponsor (ohne Zeichnen, für Tests).</summary>
+    internal static float ResultNameWidthWithSponsor(float scoreColumnWidth)
+    {
+        var card = Layout(1).Cards[0];
+        var sponsorRight = card.Right - PadX - scoreColumnWidth - ResultSponsorGap;
+        var sponsorLeft = sponsorRight - SponsorWidth(ResultSponsorScale);
+        return sponsorLeft - ResultSponsorGap - (ResultAgeBox(card).Right + ColumnGap);
+    }
+
+    /// <summary>Breite der Spielstand-Spalte für den ungünstigsten Fall („100:100“, „NIEDERLAGE“) oder breiter, falls nötig.</summary>
+    internal static float ScoreColumnWidth(IEnumerable<Game> games)
+    {
+        var scoreWidth = games.Select(g => $"{g.OwnPoints}:{g.OpponentPoints}").Append("100:100")
+            .Max(score => NaturalWidth(score, ScoreStyle(Theme.Blue)));
+        return Math.Max(scoreWidth, VerdictWidth("NIEDERLAGE"));
     }
 
     private static string OpponentLine(Game g) => (g.IsHome ? "vs " : "@ ") + g.Opponent.Name;
@@ -251,39 +286,53 @@ public static class JugendStory
 
     /// <summary>Gegner und Infozeile, gemeinsam senkrecht zentriert; beide verkleinern sich, dann „…“.</summary>
     private static void DrawTwoLines(SKCanvas c, float left, float right, float midY,
-        string first, Style firstStyle, string second, Style secondStyle)
+        string first, Style firstStyle, string second, Style secondStyle, float firstMinScale = 0.8f)
     {
         var width = right - left;
         var firstCap = CapHeight(firstStyle);
         var height = firstCap + LineGap + CapHeight(secondStyle);
         var firstBaseline = midY - height / 2 + firstCap;
-        DrawLeft(c, first, firstStyle, left, firstBaseline, width, minScale: 0.8f);
+        DrawLeft(c, first, firstStyle, left, firstBaseline, width, firstMinScale);
         DrawLeft(c, second, secondStyle, left, midY + height / 2, width, minScale: 0.8f);
     }
 
+    private static Style SponsorLabelStyle(float scale) => Body(500, 7 * S * scale, Theme.FaintText);
+
+    private static float SponsorWidth(float scale) =>
+        Math.Max(NaturalWidth("unterstützt von", SponsorLabelStyle(scale)), SponsorLogoWidth * scale);
+
     /// <summary>„unterstützt von“ über dem Logo, rechtsbündig; liefert die linke Kante der Spalte.</summary>
-    private static float DrawSponsor(SKCanvas c, SKBitmap logo, float right, float midY)
+    private static float DrawSponsor(SKCanvas c, SKBitmap logo, float right, float midY, float scale = 1f)
     {
-        var label = Body(500, 7 * S, Theme.FaintText);
-        var labelWidth = NaturalWidth("unterstützt von", label);
-        var width = Math.Max(labelWidth, SponsorLogoWidth);
+        var label = SponsorLabelStyle(scale);
+        var width = SponsorWidth(scale);
+        var logoWidth = SponsorLogoWidth * scale;
+        var logoHeight = SponsorLogoHeight * scale;
+        var gap = SponsorLabelGap * scale;
         var left = right - width;
         var cap = CapHeight(label);
-        var top = midY - (cap + SponsorLabelGap + SponsorLogoHeight) / 2;
+        var top = midY - (cap + gap + logoHeight) / 2;
         DrawCentered(c, "unterstützt von", label, left, width, top + cap, minScale: 1f);
-        var box = SKRect.Create(left + (width - SponsorLogoWidth) / 2, top + cap + SponsorLabelGap, SponsorLogoWidth, SponsorLogoHeight);
+        var box = SKRect.Create(left + (width - logoWidth) / 2, top + cap + gap, logoWidth, logoHeight);
         Primitives.DrawContained(c, logo, box);
         return left;
     }
 
+    private static Style ScoreStyle(SKColor color) => Display(20 * S, color);
+
+    private static Style VerdictStyle(SKColor color) => Body(800, 8 * S, color, letterSpacing: 1 * S);
+
+    // Laufweite hinter dem letzten Zeichen nicht mitzählen, damit beide Zeilen bündig enden.
+    private static float VerdictWidth(string verdict) =>
+        NaturalWidth(verdict, VerdictStyle(Theme.Blue)) - VerdictStyle(Theme.Blue).LetterSpacing;
+
     /// <summary>Spielstand über „SIEG“/„NIEDERLAGE“, rechtsbündig; liefert die linke Kante der Spalte.</summary>
     private static float DrawResultColumn(SKCanvas c, string score, string verdict, SKColor color, float right, float midY)
     {
-        var scoreStyle = Display(20 * S, color);
-        var verdictStyle = Body(800, 8 * S, color, letterSpacing: 1 * S);
-        // Laufweite hinter dem letzten Zeichen nicht mitzählen, damit beide Zeilen bündig enden.
+        var scoreStyle = ScoreStyle(color);
+        var verdictStyle = VerdictStyle(color);
         var scoreWidth = NaturalWidth(score, scoreStyle);
-        var verdictWidth = NaturalWidth(verdict, verdictStyle) - verdictStyle.LetterSpacing;
+        var verdictWidth = VerdictWidth(verdict);
         var scoreCap = CapHeight(scoreStyle);
         var height = scoreCap + LineGap + CapHeight(verdictStyle);
         var scoreBaseline = midY - height / 2 + scoreCap;
