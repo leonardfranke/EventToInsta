@@ -3,6 +3,7 @@ using Topten.RichTextKit;
 
 namespace EventToInsta.Tests.Rendering;
 
+[Collection("Fonts")]
 public class TextFitTests
 {
     public static string FontsDirectory => Path.Combine(AppContext.BaseDirectory, "Assets", "Fonts");
@@ -44,7 +45,9 @@ public class TextFitTests
 
         Assert.True(block.MeasuredWidth <= 600, $"MeasuredWidth {block.MeasuredWidth}");
         Assert.Single(block.Lines);
-        Assert.Equal(FontRunKind.Ellipsis, block.Lines[0].Runs.Last().RunKind);
+        var ellipsis = block.Lines[0].Runs.Last();
+        Assert.Equal(FontRunKind.Ellipsis, ellipsis.RunKind);
+        Assert.Equal("Anton", ellipsis.Typeface.FamilyName);
     }
 
     [Fact]

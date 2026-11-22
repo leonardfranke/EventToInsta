@@ -3,6 +3,7 @@ using SkiaSharp;
 
 namespace EventToInsta.Tests.Rendering;
 
+[Collection("Fonts")]
 public class PrimitivesTests
 {
     [Fact]
