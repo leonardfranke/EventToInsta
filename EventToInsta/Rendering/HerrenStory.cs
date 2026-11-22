@@ -2,6 +2,7 @@ using EventToInsta.Domain;
 using EventToInsta.Planning;
 using SkiaSharp;
 using Topten.RichTextKit;
+using static EventToInsta.Rendering.StoryText;
 
 namespace EventToInsta.Rendering;
 
@@ -42,8 +43,6 @@ public static class HerrenStory
 
     // Logos sitzen auf weißem Kreis; der Einzug hält auch rechteckige Logos innerhalb des Kreises.
     private const float LogoInset = 0.15f;
-
-    private const float Unlimited = 100_000f;
 
     private static readonly SKColor Dimmed = Theme.White.WithAlpha(140);
 
@@ -230,53 +229,6 @@ public static class HerrenStory
 
     private static string Label(Game g, Team team) =>
         team == g.Us ? "HERREN" : team.Name.ToUpper(Theme.German);
-
-    private static void DrawLeft(SKCanvas c, string text, Style style, float x, float baseline, float maxWidth, float minScale = 1f)
-    {
-        var block = Fit(text, style, maxWidth, minScale, centered: false);
-        PaintAtBaseline(c, block, x, baseline);
-    }
-
-    private static void DrawCentered(
-        SKCanvas c, string text, Style style, float left, float width, float baseline,
-        float minScale = 0.75f, bool letterSpacingCorrection = false)
-    {
-        var block = Fit(text, style, width, minScale, centered: true);
-        // Laufweite steht auch hinter dem letzten Zeichen; für echte Zentrierung halb zurücknehmen.
-        var shift = letterSpacingCorrection ? style.LetterSpacing / 2 : 0;
-        PaintAtBaseline(c, block, left + shift, baseline);
-    }
-
-    /// <summary>Verkleinert die Schrift bis <paramref name="minScale"/>, erst danach kürzt TextFit mit „…“.</summary>
-    private static TextBlock Fit(string text, Style style, float maxWidth, float minScale, bool centered)
-    {
-        // Breite wächst linear mit Schriftgröße und Laufweite, also reicht eine Messung ohne Begrenzung.
-        var natural = TextFit.Line(text, style, Unlimited).MeasuredWidth;
-        var scale = natural > maxWidth ? Math.Max(minScale, maxWidth / natural * 0.99f) : 1f;
-        var s = With(style, style.TextColor);
-        s.FontSize = style.FontSize * scale;
-        s.LetterSpacing = style.LetterSpacing * scale;
-        return centered ? TextFit.Centered(text, s, maxWidth) : TextFit.Line(text, s, maxWidth);
-    }
-
-    private static Style With(Style s, SKColor color) => new()
-    {
-        FontFamily = s.FontFamily,
-        FontWeight = s.FontWeight,
-        FontSize = s.FontSize,
-        LetterSpacing = s.LetterSpacing,
-        TextColor = color,
-    };
-
-    private static void PaintAtBaseline(SKCanvas c, TextBlock block, float x, float baseline) =>
-        block.Paint(c, new SKPoint(x, baseline - block.Lines[0].BaseLine));
-
-    private static float CapHeight(Style style)
-    {
-        var face = FontMapper.Default.TypefaceFromStyle(style, false);
-        using var font = new SKFont(face, style.FontSize);
-        return font.Metrics.CapHeight;
-    }
 
     private static SKPath Polygon(params (float X, float Y)[] points)
     {

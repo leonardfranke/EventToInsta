@@ -204,11 +204,4 @@ public sealed class HerrenStoryTests : IDisposable
         Assert.Equal("herren-preview-4711.jpg", story.FileName);
         AssertStory(story);
     }
-
-    [Fact]
-    public async Task JugendRequest_NotSupportedYet()
-    {
-        var request = new JugendResult(new DateOnly(2026, 11, 28), [], 1, 1);
-        await Assert.ThrowsAsync<NotSupportedException>(() => Renderer(new FakeLogos(null)).RenderAsync(request));
-    }
 }
