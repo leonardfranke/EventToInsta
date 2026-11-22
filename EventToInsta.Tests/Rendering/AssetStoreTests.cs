@@ -24,27 +24,6 @@ public sealed class AssetStoreTests : IDisposable
         new(_dir, sponsors ?? new Dictionary<string, string>(), new Random(1));
 
     [Fact]
-    public void AssetStore_EmptyJugendFolder_FallsBackToHerren()
-    {
-        WritePng("Herren/x.png");
-        Directory.CreateDirectory(Path.Combine(_dir, "Jugend"));
-
-        using var photo = Store().RandomJugendPhoto();
-
-        Assert.Equal(10, photo.Width);
-    }
-
-    [Fact]
-    public void AssetStore_MissingJugendFolder_FallsBackToHerren()
-    {
-        WritePng("Herren/x.png");
-
-        using var photo = Store().RandomJugendPhoto();
-
-        Assert.Equal(10, photo.Width);
-    }
-
-    [Fact]
     public void AssetStore_UnknownAge_NoSponsor()
     {
         WritePng("Sponsoren/a.png");

@@ -14,8 +14,6 @@ public sealed class AssetStore(
     public SKBitmap RandomHerrenPhoto() => RandomPhoto("Herren")
         ?? throw new InvalidOperationException($"Keine Fotos in {Path.Combine(imagesDirectory, "Herren")}");
 
-    public SKBitmap RandomJugendPhoto() => RandomPhoto("Jugend") ?? RandomHerrenPhoto();
-
     public SKBitmap ClubLogo() => Decode(Path.Combine(imagesDirectory, "Logos", "Dachse.png"));
 
     public SKBitmap? SponsorLogo(string ageClass)

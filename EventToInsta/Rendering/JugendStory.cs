@@ -7,7 +7,7 @@ using static EventToInsta.Rendering.StoryText;
 namespace EventToInsta.Rendering;
 
 /// <summary>
-/// Jugend-Stories im Stil „Infokarte“: abgedunkeltes Foto, zentrierter Kopf, Kartenliste, Slogan.
+/// Jugend-Stories im Stil „Infokarte“: Spielfeld-Hintergrund (<see cref="CourtBackground"/>), zentrierter Kopf, Kartenliste, Slogan.
 /// Geometrie aus den Entwürfen (300 px breit) mal 3,6; Kartenhöhe so gewählt, dass <see cref="MaxCards"/>
 /// Karten auch mit Sponsor und langen Namen zwischen Kopf und Fuß passen.
 /// </summary>
@@ -28,6 +28,8 @@ public static class JugendStory
     private const float CardHeight = 204;
     private const float CardGap = 24;
     private const float CardRadius = 12 * S;
+    private const float CardShadowOffset = 2 * S;
+    private const float CardShadowSigma = 4 * S; // CSS-Blur 8 px entspricht Sigma 4
     private const float PadX = 12 * S;
     private const float ColumnGap = 10 * S;
     private const float AgeSize = 144;
@@ -52,10 +54,10 @@ public static class JugendStory
 
     internal sealed record ListLayout(float HeaderBottom, float FooterTop, IReadOnlyList<SKRect> Cards);
 
-    public static void DrawPreview(SKCanvas c, JugendPreview r, SKBitmap photo, Func<string, SKBitmap?> sponsorFor, string homePlace)
+    public static void DrawPreview(SKCanvas c, JugendPreview r, Func<string, SKBitmap?> sponsorFor, string homePlace)
     {
         EnsureFits(r.Games.Count);
-        DrawBackground(c, photo);
+        CourtBackground.Draw(c, SKRect.Create(0, 0, Theme.Width, Theme.Height));
         DrawHeader(c, r.Home ? "HEIMSPIELE" : "AUSWÄRTSSPIELE", PreviewDateLine(r));
 
         var layout = Layout(r.Games.Count);
@@ -69,13 +71,13 @@ public static class JugendStory
         DrawFooter(c, "KOMMT VORBEI & FEUERT UNS AN!");
     }
 
-    public static void DrawResult(SKCanvas c, JugendResult r, SKBitmap photo, Func<string, SKBitmap?> sponsorFor)
+    public static void DrawResult(SKCanvas c, JugendResult r, Func<string, SKBitmap?> sponsorFor)
     {
         EnsureFits(r.Games.Count);
         if (r.Games.Any(g => !g.HasResult))
             throw new ArgumentException("Jugend-Ergebnis ohne Spielstand", nameof(r));
 
-        DrawBackground(c, photo);
+        CourtBackground.Draw(c, SKRect.Create(0, 0, Theme.Width, Theme.Height));
         DrawHeader(c, "ERGEBNISSE", ResultDateLine(r));
 
         var layout = Layout(r.Games.Count);
@@ -162,16 +164,7 @@ public static class JugendStory
     private static Style Body(int weight, float size, SKColor color, float letterSpacing = 0) =>
         new() { FontFamily = Theme.Body, FontWeight = weight, FontSize = size, TextColor = color, LetterSpacing = letterSpacing };
 
-    // ---------- Hintergrund, Kopf, Fuß ----------
-
-    private static void DrawBackground(SKCanvas c, SKBitmap photo)
-    {
-        c.Clear(Theme.Blue);
-        var full = SKRect.Create(0, 0, Theme.Width, Theme.Height);
-        Primitives.DrawCover(c, photo, full);
-        using var shade = new SKPaint { Color = Theme.Shade };
-        c.DrawRect(full, shade);
-    }
+    // ---------- Kopf, Fuß ----------
 
     private readonly record struct Header(float KickerBaseline, float TitleBaseline, float DateBaseline, float Bottom);
 
@@ -288,6 +281,17 @@ public static class JugendStory
     {
         using var rounded = new SKRoundRect(card, CardRadius);
         using var white = new SKPaint { Color = Theme.White, IsAntialias = true };
+        // Leichter Schatten (Entwurf: 0 2px 8px rgba(0,0,0,.18)) hebt die Karte vom hellen Lichtkegel ab.
+        using (var shadow = new SKPaint
+        {
+            Color = SKColors.Black.WithAlpha(46), IsAntialias = true,
+            MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, CardShadowSigma),
+        })
+        {
+            using var offset = new SKRoundRect(card, CardRadius);
+            offset.Offset(0, CardShadowOffset);
+            c.DrawRoundRect(offset, shadow);
+        }
         c.Save();
         c.ClipRoundRect(rounded, antialias: true);
         c.DrawRect(card, white);

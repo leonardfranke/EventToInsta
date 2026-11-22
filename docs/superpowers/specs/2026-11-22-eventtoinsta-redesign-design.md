@@ -130,7 +130,7 @@ Die Entwürfe liegen unter `.superpowers/brainstorm/…/content/`: `herren-b-v3.
 
 ### Jugend (Stil „Infokarte“): Vorschau und Ergebnis
 
-- Das Foto füllt das ganze Bild, darüber liegt eine dunkelblaue Abdunklung (etwa 75 %).
+- Der Hintergrund ist kein Foto, sondern eine rein grafische, im Code gezeichnete Fläche (Variante A „Spielfeld“ aus `jugend-hintergrund.html`, Entscheidung des Auftraggebers vom 22.11.2026): ein radialer Verlauf von `#1663C7` in der Mitte (Lichtkegel bei 50 % Breite, 38 % Höhe) nach `#062A5E` am Rand, darüber dezent (13 % Deckkraft) die weißen Linien eines Basketballfelds (Außenlinie, Mittellinie, Mittelkreis, Zonen, Freiwurfkreise und Dreierlinien). Eine Abdunklung gibt es nicht mehr; die weißen Karten haben einen leichten Schatten.
 - Kopfbereich, zentriert:
   - kleine Zeile „SV BAD LAER · JUGEND“
   - groß „HEIMSPIELE“, „AUSWÄRTSSPIELE“ oder „ERGEBNISSE“
@@ -142,7 +142,7 @@ Die Entwürfe liegen unter `.superpowers/brainstorm/…/content/`: `herren-b-v3.
   - Im **Ergebnis** lautet die Infozeile „Heim“ oder „Auswärts“. Rechts steht der Spielstand **aus Sicht von Bad Laer**, also mit den eigenen Punkten vorn, und darunter „SIEG“ oder „NIEDERLAGE“. Siege haben einen blauen linken Rand, Niederlagen einen grauen und abgeschwächten Spielstand. Hat die Altersklasse einen Sponsor, steht unter „Heim“/„Auswärts“ eine kleine, dezente Zeile „unterstützt von [Logo]“ (kleine graue Schrift, Logo etwa 1,6-mal so hoch wie die Schriftgröße, linksbündig mit dem Gegnernamen); Gegnername und Spielstand behalten ihre volle Breite (Variante B aus `sponsor-results.html`, Entscheidung des Auftraggebers vom 22.11.2026).
 - Die Fußzeile ist ein kurzer Slogan: in der Vorschau „KOMMT VORBEI & FEUERT UNS AN!“, im Ergebnis „STARK GESPIELT, TEAMS!“.
 - **Aufteilung:** Passt die Liste nicht auf ein Bild (Richtwert etwa 6 Karten), wird sie auf mehrere Bilder verteilt, und zwar gleichmäßig, also 7 Spiele als 4 + 3 und nicht als 6 + 1. Die Reihenfolge bleibt chronologisch.
-- Das Hintergrundfoto wird zufällig aus `Images/Jugend/` gewählt. Ist der Ordner leer oder fehlt er, wird `Images/Herren/` verwendet.
+- Der Spielfeld-Hintergrund ist bei jeder Jugend-Story gleich (kein Zufall); `Images/Jugend/` wird nicht mehr verwendet.
 
 ### Gemeinsam für beide Stile
 

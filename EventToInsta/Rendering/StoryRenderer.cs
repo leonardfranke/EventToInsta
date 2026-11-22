@@ -28,11 +28,9 @@ public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string h
                     HerrenStory.DrawResult(c, r, photo, club, opponentLogo));
             }
             case JugendPreview jp:
-                return Render(request, assets.RandomJugendPhoto, (c, photo) =>
-                    JugendStory.DrawPreview(c, jp, photo, assets.SponsorLogo, homePlace));
+                return Render(request, c => JugendStory.DrawPreview(c, jp, assets.SponsorLogo, homePlace));
             case JugendResult jr:
-                return Render(request, assets.RandomJugendPhoto, (c, photo) =>
-                    JugendStory.DrawResult(c, jr, photo, assets.SponsorLogo));
+                return Render(request, c => JugendStory.DrawResult(c, jr, assets.SponsorLogo));
             default:
                 throw new NotSupportedException($"Unbekannte Story: {request.GetType().Name}");
         }
@@ -41,9 +39,14 @@ public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string h
     private static RenderedStory Render(StoryRequest request, Func<SKBitmap> loadPhoto, Action<SKCanvas, SKBitmap> draw)
     {
         using var photo = loadPhoto();
+        return Render(request, c => draw(c, photo));
+    }
+
+    private static RenderedStory Render(StoryRequest request, Action<SKCanvas> draw)
+    {
         using var surface = SKSurface.Create(new SKImageInfo(Theme.Width, Theme.Height, SKColorType.Rgba8888, SKAlphaType.Premul))
             ?? throw new InvalidOperationException("Zeichenfläche konnte nicht erstellt werden");
-        draw(surface.Canvas, photo);
+        draw(surface.Canvas);
         using var image = surface.Snapshot();
         using var data = image.Encode(SKEncodedImageFormat.Jpeg, Theme.JpegQuality);
         return new RenderedStory(request.FileName, data.ToArray());
