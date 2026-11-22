@@ -14,7 +14,8 @@ public sealed class PreviewJob(
     IPostedStateStore state,
     IClock clock,
     int maxCards,
-    Action<string> log)
+    Action<string> log,
+    TimeSpan? saveRetryDelay = null)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -44,6 +45,7 @@ public sealed class PreviewJob(
         log($"Veröffentlicht: {key}");
         // Zustand erst nach erfolgreichem Publish speichern, und zwar unabhängig vom Abbruch:
         // Der Beitrag ist öffentlich, die Buchführung darf nicht ausfallen (sonst Duplikat).
-        await state.SaveAsync(current.WithPreviewWeek(week), CancellationToken.None);
+        await StateSaver.SaveAfterPublishAsync(
+            state, current.WithPreviewWeek(week), key, saveRetryDelay ?? StateSaver.DefaultDelay, log);
     }
 }

@@ -11,8 +11,9 @@ public class ResultsJobTests
     private static readonly Score S = new(50, 40);
     private static DateTime At(int hour, int day = 22) => new(2026, 11, day, hour, 0, 0);
 
-    private static ResultsJob Job(FakeGameSource g, RecordingPublisher p, InMemoryStateStore s, DateTime now) =>
-        new(g, new FakeRenderer(), p, s, new FixedClock(now), 6, _ => { });
+    private static ResultsJob Job(FakeGameSource g, RecordingPublisher p, InMemoryStateStore s, DateTime now,
+        List<string>? log = null) =>
+        new(g, new FakeRenderer(), p, s, new FixedClock(now), 6, m => log?.Add(m), saveRetryDelay: TimeSpan.Zero);
 
     private static FakeGameSource Games() => new(
         GameFactory.Make(1, At(14), herren: true, result: S),
@@ -85,6 +86,39 @@ public class ResultsJobTests
         await Job(Games(), pub, store, At(18)).RunAsync();
         Assert.Equal(2, pub.Posts.Count);
         Assert.Equal(new DateOnly(2026, 11, 22), store.Current.Date);
+    }
+
+    [Fact]
+    public async Task Results_SaveFailsTwiceThenSucceeds_SavedWithoutError()
+    {
+        var store = new InMemoryStateStore(failSaves: 2);
+        var log = new List<string>();
+        var pub = new RecordingPublisher();
+        await Job(Games(), pub, store, At(18), log).RunAsync();
+        Assert.Equal(4, store.SaveAttempts); // Herren: 2 Fehlschläge + 1, Jugend: 1
+        Assert.Contains(1, store.Current.HerrenMatchIds);
+        Assert.True(store.Current.JugendPosted);
+        Assert.DoesNotContain(log, l => l.Contains("NICHT gespeichert"));
+    }
+
+    [Fact]
+    public async Task Results_SaveAlwaysFails_DistinctMessagePerPost_InAggregate()
+    {
+        var store = new InMemoryStateStore(failSaves: int.MaxValue);
+        var log = new List<string>();
+        var pub = new RecordingPublisher();
+        var ex = await Assert.ThrowsAsync<AggregateException>(() => Job(Games(), pub, store, At(18), log).RunAsync());
+        Assert.Equal(2, pub.Posts.Count); // Speicherfehler bei Herren hält Jugend nicht auf
+        var keys = new[] { "herren-result-1", "jugend-result-2026-11-22" };
+        Assert.Equal(keys.Length, ex.InnerExceptions.Count);
+        foreach (var (inner, key) in ex.InnerExceptions.Zip(keys))
+        {
+            var expected = $"VERÖFFENTLICHT, Zustand NICHT gespeichert – {key} – nicht erneut auslösen";
+            Assert.StartsWith(expected, Assert.IsType<StateNotSavedException>(inner).Message);
+            Assert.Contains(log, l => l.StartsWith(expected));
+        }
+        Assert.DoesNotContain(log, l => l.StartsWith("Fehler bei"));
+        Assert.Equal(6, store.SaveAttempts);
     }
 
     [Fact]

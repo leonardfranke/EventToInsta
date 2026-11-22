@@ -13,14 +13,18 @@ internal sealed class FakeGameSource(params Game[] games) : IGameSource
         Task.FromResult<IReadOnlyList<Game>>(games);
 }
 
-internal sealed class InMemoryStateStore(PostedState? initial = null) : IPostedStateStore
+/// <param name="failSaves">So viele Speicherversuche schlagen fehl, bevor einer gelingt (int.MaxValue: nie).</param>
+internal sealed class InMemoryStateStore(PostedState? initial = null, int failSaves = 0) : IPostedStateStore
 {
     public PostedState Current { get; private set; } = initial ?? PostedState.Empty;
     public int Saves { get; private set; }
+    public int SaveAttempts { get; private set; }
     public Task<PostedState> LoadAsync(CancellationToken ct = default) => Task.FromResult(Current);
     public Task SaveAsync(PostedState state, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested(); // wie die echten Stores
+        SaveAttempts++;
+        if (SaveAttempts <= failSaves) throw new IOException("bucket boom");
         Current = state;
         Saves++;
         return Task.CompletedTask;

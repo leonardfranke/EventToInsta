@@ -15,7 +15,8 @@ public sealed class ResultsJob(
     IPostedStateStore state,
     IClock clock,
     int maxCards,
-    Action<string> log)
+    Action<string> log,
+    TimeSpan? saveRetryDelay = null)
 {
     public async Task RunAsync(CancellationToken ct = default)
     {
@@ -34,43 +35,45 @@ public sealed class ResultsJob(
 
         foreach (var result in plan.Herren)
         {
-            var key = $"herren-result-{result.Game.MatchId}";
-            try
-            {
-                var image = await renderer.RenderAsync(result, ct);
-                await publisher.PublishAsync(new StoryPost(key, [image]), ct);
-                log($"Veröffentlicht: {key}");
-                current = current.WithHerren(result.Game.MatchId);
-                await state.SaveAsync(current, CancellationToken.None); // nach Publish nie abbrechen
-            }
-            catch (Exception e) when (!ct.IsCancellationRequested)
-            {
-                log($"Fehler bei {key}: {e.Message}");
-                errors.Add(e);
-            }
+            var matchId = result.Game.MatchId;
+            await PostAsync($"herren-result-{matchId}", [result], s => s.WithHerren(matchId));
         }
 
         if (plan.Jugend.Count > 0)
+            await PostAsync($"jugend-result-{today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}",
+                plan.Jugend, s => s.WithJugendPosted());
+
+        if (errors.Count > 0)
+            throw new AggregateException("Mindestens ein Beitrag ist fehlgeschlagen.", errors);
+
+        // Ein Beitrag: alle Bilder rendern, veröffentlichen, dann (getrennt davon) den Zustand speichern.
+        async Task PostAsync(string key, IEnumerable<StoryRequest> requests, Func<PostedState, PostedState> markPosted)
         {
-            var key = $"jugend-result-{today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}";
             try
             {
                 var images = new List<RenderedStory>();
-                foreach (var part in plan.Jugend)
-                    images.Add(await renderer.RenderAsync(part, ct));
+                foreach (var request in requests)
+                    images.Add(await renderer.RenderAsync(request, ct));
                 await publisher.PublishAsync(new StoryPost(key, images), ct);
                 log($"Veröffentlicht: {key}");
-                current = current.WithJugendPosted();
-                await state.SaveAsync(current, CancellationToken.None); // nach Publish nie abbrechen
             }
             catch (Exception e) when (!ct.IsCancellationRequested)
             {
                 log($"Fehler bei {key}: {e.Message}");
                 errors.Add(e);
+                return;
+            }
+
+            current = markPosted(current);
+            try
+            {
+                // nach Publish nie abbrechen; StateSaver loggt die eigene Meldung selbst
+                await StateSaver.SaveAfterPublishAsync(state, current, key, saveRetryDelay ?? StateSaver.DefaultDelay, log);
+            }
+            catch (StateNotSavedException e)
+            {
+                errors.Add(e);
             }
         }
-
-        if (errors.Count > 0)
-            throw new AggregateException("Mindestens ein Beitrag ist fehlgeschlagen.", errors);
     }
 }

@@ -10,8 +10,9 @@ public class PreviewJobTests
     private static readonly DateTime Now = new(2026, 11, 22, 9, 0, 0); // Sonntag
     private static readonly string Week = PostedState.IsoWeek(new DateOnly(2026, 11, 22));
 
-    private static PreviewJob Job(FakeGameSource g, FakeRenderer r, RecordingPublisher p, InMemoryStateStore s) =>
-        new(g, r, p, s, new FixedClock(Now), 6, _ => { });
+    private static PreviewJob Job(FakeGameSource g, FakeRenderer r, RecordingPublisher p, InMemoryStateStore s,
+        List<string>? log = null) =>
+        new(g, r, p, s, new FixedClock(Now), 6, m => log?.Add(m), saveRetryDelay: TimeSpan.Zero);
 
     private static FakeGameSource TwoGames() => new(
         GameFactory.Make(1, Now.AddHours(3), herren: true),
@@ -69,6 +70,35 @@ public class PreviewJobTests
         var pub = new RecordingPublisher(afterRecorded: _ => cts.Cancel());
         await Job(TwoGames(), new FakeRenderer(), pub, store).RunAsync(cts.Token);
         Assert.Equal(Week, store.Current.PreviewWeek);
+    }
+
+    [Fact]
+    public async Task Preview_SaveFailsTwiceThenSucceeds_SavedWithoutError()
+    {
+        var store = new InMemoryStateStore(failSaves: 2);
+        var log = new List<string>();
+        var pub = new RecordingPublisher();
+        await Job(TwoGames(), new FakeRenderer(), pub, store, log).RunAsync();
+        Assert.Equal(3, store.SaveAttempts);
+        Assert.Equal(Week, store.Current.PreviewWeek);
+        Assert.Single(pub.Posts);
+        Assert.DoesNotContain(log, l => l.Contains("NICHT gespeichert"));
+    }
+
+    [Fact]
+    public async Task Preview_SaveAlwaysFails_DistinctMessageLoggedAndThrown()
+    {
+        var store = new InMemoryStateStore(failSaves: int.MaxValue);
+        var log = new List<string>();
+        var pub = new RecordingPublisher();
+        var ex = await Assert.ThrowsAsync<StateNotSavedException>(() =>
+            Job(TwoGames(), new FakeRenderer(), pub, store, log).RunAsync());
+        var expected = $"VERÖFFENTLICHT, Zustand NICHT gespeichert – preview-{Week} – nicht erneut auslösen";
+        Assert.StartsWith(expected, ex.Message);
+        Assert.IsType<IOException>(ex.InnerException);
+        Assert.Contains(log, l => l.StartsWith(expected));
+        Assert.Equal(3, store.SaveAttempts);
+        Assert.Equal(1, pub.Calls);
     }
 
     [Fact]
