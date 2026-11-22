@@ -32,7 +32,16 @@ public static class HerrenStory
     private const float FooterGap = 10 * S;
 
     // Unterer Inhaltsblock: Infozeile endet deutlich über der Trennlinie.
-    private const float InfoBaseline = FooterRule - 52;
+    private const float InfoGapAboveRule = 52;
+    private const float InfoBaseline = FooterRule - InfoGapAboveRule;
+
+    // Oberkanten der Großbuchstaben im Inhaltsblock unter der Schräge.
+    private const float GameDayCapTop = 1170;
+    private const float ScoreCapTop = 1170;
+    private const float VerdictCapTop = 1440;
+
+    // Logos sitzen auf weißem Kreis; der Einzug hält auch rechteckige Logos innerhalb des Kreises.
+    private const float LogoInset = 0.15f;
 
     private const float Unlimited = 100_000f;
 
@@ -51,7 +60,7 @@ public static class HerrenStory
         // „GAME“ / „DAY“: 54 px, Zeilenhöhe 0,92.
         var big = new Style { FontFamily = Theme.Display, FontSize = 54 * S, TextColor = Theme.White, LetterSpacing = 1 * S };
         var bigCap = CapHeight(big);
-        var gameBaseline = 1170 + bigCap;
+        var gameBaseline = GameDayCapTop + bigCap;
         var dayBaseline = gameBaseline + 54 * S * 0.92f;
         DrawLeft(c, "GAME", big, Margin, gameBaseline, Theme.Width - 2 * Margin);
         DrawLeft(c, "DAY", big, Margin, dayBaseline, Theme.Width - 2 * Margin);
@@ -78,7 +87,7 @@ public static class HerrenStory
         if (win)
         {
             var verdict = new Style { FontFamily = Theme.Display, FontSize = 22 * S, TextColor = Theme.White, LetterSpacing = 4 * S };
-            DrawCentered(c, "SIEG!", verdict, 0, Theme.Width, 1440 + CapHeight(verdict), letterSpacingCorrection: true);
+            DrawCentered(c, "SIEG!", verdict, 0, Theme.Width, VerdictCapTop + CapHeight(verdict), letterSpacingCorrection: true);
         }
 
         var info = $"{g.Kickoff.ToString("dddd", Theme.German)}, {g.Kickoff.ToString("dd.MM.", Theme.German)} · {g.League}";
@@ -165,7 +174,7 @@ public static class HerrenStory
             }
 
             var cap = CapHeight(num);
-            var baseline = 1170 + cap;
+            var baseline = ScoreCapTop + cap;
             var x = (Theme.Width - total) / 2;
             PaintAtBaseline(c, home, x, baseline);
             x += home.MeasuredWidth + gap;
@@ -205,10 +214,18 @@ public static class HerrenStory
 
     private static void DrawTeamLogo(SKCanvas c, Game g, Team team, SKBitmap clubLogo, SKBitmap? opponentLogo, SKRect box)
     {
-        if (team == g.Us)
-            Primitives.DrawContained(c, clubLogo, box);
-        else
-            Primitives.DrawLogoOrBadge(c, opponentLogo, team.ShortName, box, Theme.White, Theme.Blue);
+        var logo = team == g.Us ? clubLogo : opponentLogo;
+        if (logo == null)
+        {
+            Primitives.DrawLogoOrBadge(c, null, team.ShortName, box, Theme.White, Theme.Blue);
+            return;
+        }
+
+        // Weißer Kreis wie beim Badge, damit auch dunkle Logos auf Blau lesbar bleiben.
+        using var disc = new SKPaint { Color = Theme.White, IsAntialias = true };
+        c.DrawCircle(box.MidX, box.MidY, Math.Min(box.Width, box.Height) / 2, disc);
+        var inset = Math.Min(box.Width, box.Height) * LogoInset;
+        Primitives.DrawContained(c, logo, SKRect.Inflate(box, -inset, -inset));
     }
 
     private static string Label(Game g, Team team) =>

@@ -48,7 +48,15 @@ public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string h
 
     private async Task<SKBitmap?> LoadLogoAsync(Team team, CancellationToken ct)
     {
-        var bytes = await logos.LoadTeamLogoAsync(team.PermanentId, ct);
-        return bytes is { Length: > 0 } ? SKBitmap.Decode(bytes) : null;
+        try
+        {
+            var bytes = await logos.LoadTeamLogoAsync(team.PermanentId, ct);
+            return bytes is { Length: > 0 } ? SKBitmap.Decode(bytes) : null;
+        }
+        catch (Exception) when (!ct.IsCancellationRequested)
+        {
+            // Fehlendes oder kaputtes Logo darf die Story nicht verhindern: dann zeigt der Fuß das Badge.
+            return null;
+        }
     }
 }

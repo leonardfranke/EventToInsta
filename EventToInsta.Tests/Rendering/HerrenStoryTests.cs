@@ -44,6 +44,37 @@ public sealed class HerrenStoryTests : IDisposable
         }
     }
 
+    private sealed class ThrowingLogos : ILogoSource
+    {
+        public Task<byte[]?> LoadTeamLogoAsync(int teamPermanentId, CancellationToken ct = default) =>
+            throw new HttpRequestException("Logo-Server nicht erreichbar");
+    }
+
+    // Mitte der Logo-Felder im Fuß (Rand 72, Logo 158,4 px, unten 72 px Abstand).
+    private const int LeftLogoX = 151;
+    private const int RightLogoX = 929;
+    private const int LogoY = 1769;
+
+    private static bool IsWhite(SKColor p) => p.Red > 230 && p.Green > 230 && p.Blue > 230;
+    private static bool IsRed(SKColor p) => p.Red > 200 && p.Green < 80 && p.Blue < 80;
+    private static bool IsOrange(SKColor p) => p.Red > 200 && p.Green is > 110 and < 220 && p.Blue < 80;
+
+    /// <summary>Badge: weißer Kreis, in der Mitte weder Gegner-Testlogo (rot) noch Vereinslogo (orange).</summary>
+    private static void AssertBadge(SKBitmap bmp, int x)
+    {
+        var top = bmp.GetPixel(x, LogoY - 60);
+        var mid = bmp.GetPixel(x, LogoY);
+        Assert.True(IsWhite(top), $"weißer Kreis erwartet, war {top}");
+        Assert.False(IsRed(mid) || IsOrange(mid), $"Badge erwartet, Mitte war {mid}");
+    }
+
+    private static void AssertClubLogo(SKBitmap bmp, int x)
+    {
+        var mid = bmp.GetPixel(x, LogoY);
+        Assert.True(IsOrange(mid), $"Vereinslogo erwartet, war {mid}");
+        Assert.True(IsWhite(bmp.GetPixel(x, LogoY - 60)), "weißer Kreis hinter dem Vereinslogo erwartet");
+    }
+
     private static byte[] LogoBytes()
     {
         using var bmp = new SKBitmap(120, 80);
@@ -89,10 +120,69 @@ public sealed class HerrenStoryTests : IDisposable
 
         Assert.Equal(1, logos.Calls);
         AssertStory(story);
-        // Gegner (Gast) steht rechts im Fuß: Badge ist ein weißer Kreis.
+        // Heimspiel: Bad Laer links, Gegner (Gast) rechts als Badge.
         using var bmp = SKBitmap.Decode(story.Jpeg);
-        var px = bmp.GetPixel(1080 - 72 - 79, 1768 - 60);
-        Assert.True(px.Red > 230 && px.Green > 230 && px.Blue > 230, $"Badge erwartet, war {px}");
+        AssertClubLogo(bmp, LeftLogoX);
+        AssertBadge(bmp, RightLogoX);
+    }
+
+    [Fact]
+    public async Task Preview_OpponentLogo_DrawnOnWhiteDisc()
+    {
+        var story = await Renderer(new FakeLogos(LogoBytes())).RenderAsync(new HerrenPreview(Herren()));
+
+        using var bmp = SKBitmap.Decode(story.Jpeg);
+        Assert.True(IsRed(bmp.GetPixel(RightLogoX, LogoY)), "Gegnerlogo erwartet");
+        Assert.True(IsWhite(bmp.GetPixel(RightLogoX, LogoY - 60)), "weißer Kreis hinter dem Gegnerlogo erwartet");
+    }
+
+    [Fact]
+    public async Task Preview_Away_HomeOpponentLeft_ClubRight()
+    {
+        var game = Herren(home: false, place: "Melle");
+        var story = await Renderer(new FakeLogos(null)).RenderAsync(new HerrenPreview(game));
+
+        using var bmp = SKBitmap.Decode(story.Jpeg);
+        AssertBadge(bmp, LeftLogoX);
+        AssertClubLogo(bmp, RightLogoX);
+    }
+
+    [Fact]
+    public async Task Preview_UndecodableLogoBytes_FallsBackToBadge()
+    {
+        var story = await Renderer(new FakeLogos([1, 2, 3])).RenderAsync(new HerrenPreview(Herren()));
+
+        using var bmp = SKBitmap.Decode(story.Jpeg);
+        AssertBadge(bmp, RightLogoX);
+    }
+
+    [Fact]
+    public async Task Preview_LogoSourceThrows_FallsBackToBadge()
+    {
+        var story = await Renderer(new ThrowingLogos()).RenderAsync(new HerrenPreview(Herren()));
+
+        using var bmp = SKBitmap.Decode(story.Jpeg);
+        AssertBadge(bmp, RightLogoX);
+    }
+
+    [Fact]
+    public async Task Preview_CancelledToken_Throws()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        var logos = new CancellingLogos();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => Renderer(logos).RenderAsync(new HerrenPreview(Herren()), cts.Token));
+    }
+
+    private sealed class CancellingLogos : ILogoSource
+    {
+        public Task<byte[]?> LoadTeamLogoAsync(int teamPermanentId, CancellationToken ct = default)
+        {
+            ct.ThrowIfCancellationRequested();
+            return Task.FromResult<byte[]?>(null);
+        }
     }
 
     [Fact]
