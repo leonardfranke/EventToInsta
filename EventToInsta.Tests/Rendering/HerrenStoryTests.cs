@@ -241,6 +241,14 @@ public sealed class HerrenStoryTests : IDisposable
         Assert.Contains("TURN- UND", line);
     }
 
+    [Theory]
+    [InlineData(true, null)]
+    [InlineData(false, "Osnabrück-Haste")]
+    public void PreviewInfoLine_NeverContainsPlace(bool home, string? place)
+    {
+        Assert.Equal("SAMSTAG, 28.11. · 19:30 UHR", HerrenStory.PreviewInfoLine(Herren(home, place: place)));
+    }
+
     [Fact]
     public void TeamsLine_ShortOpponent_Unchanged()
     {

@@ -53,11 +53,7 @@ public static class HerrenStory
 
     private static readonly SKColor Dimmed = Theme.White.WithAlpha(140);
 
-    public static void DrawPreview(SKCanvas c, HerrenPreview r, SKBitmap clubLogo, SKBitmap? opponentLogo) =>
-        DrawPreview(c, r, clubLogo, opponentLogo, homePlace: null);
-
-    internal static void DrawPreview(
-        SKCanvas c, HerrenPreview r, SKBitmap clubLogo, SKBitmap? opponentLogo, string? homePlace)
+    public static void DrawPreview(SKCanvas c, HerrenPreview r, SKBitmap clubLogo, SKBitmap? opponentLogo)
     {
         var g = r.Game;
         DrawBackground(c, g, clubLogo, opponentLogo);
@@ -71,11 +67,7 @@ public static class HerrenStory
         DrawLeft(c, "GAME", big, Margin, gameBaseline, Theme.Width - 2 * Margin);
         DrawLeft(c, "DAY", big, Margin, dayBaseline, Theme.Width - 2 * Margin);
 
-        var info = $"{g.Kickoff.ToString("dddd", Theme.German)}, {g.Kickoff.ToString("dd.MM.", Theme.German)} · {g.Kickoff:HH:mm} UHR";
-        if (!g.IsHome && !string.IsNullOrWhiteSpace(g.Place)
-            && !string.Equals(g.Place.Trim(), homePlace?.Trim(), StringComparison.OrdinalIgnoreCase))
-            info += $" · {g.Place.Trim()}";
-        DrawLeft(c, info.ToUpper(Theme.German), InfoStyle(), Margin, InfoBaseline, Theme.Width - 2 * Margin, minScale: 0.7f);
+        DrawLeft(c, PreviewInfoLine(g), InfoStyle(), Margin, InfoBaseline, Theme.Width - 2 * Margin, minScale: 0.7f);
 
         var hall = g.IsHome ? HomeHall : g.Place;
         DrawFooter(c, g, Join(hall, g.League));
@@ -102,6 +94,10 @@ public static class HerrenStory
 
         DrawFooter(c, g, Join(g.League));
     }
+
+    /// <summary>„SAMSTAG, 28.11. · 19:30 UHR“ für Heim und Auswärts; der Ort steht nur in der Fußzeile.</summary>
+    internal static string PreviewInfoLine(Game g) =>
+        $"{g.Kickoff.ToString("dddd", Theme.German)}, {g.Kickoff.ToString("dd.MM.", Theme.German)} · {g.Kickoff:HH:mm} UHR".ToUpper(Theme.German);
 
     private static Style InfoStyle() => new()
     {
@@ -159,13 +155,14 @@ public static class HerrenStory
 
         if (logo == null)
         {
-            // Badge mit Kurzname: erst verkleinern, erst danach mit „…“ kürzen.
+            // Badge mit Kürzel: nur verkleinern, nie mit „…“ kürzen.
+            var abbreviation = TeamAbbreviation.For(team);
             var style = new Style { FontFamily = Theme.Display, FontSize = 24 * S, TextColor = Theme.Blue };
             var width = box.Width * 0.8f;
-            const float minScale = 0.5f;
-            var block = Fit(team.ShortName, style, width, minScale, centered: true);
+            const float minScale = 0.2f;
+            var block = Fit(abbreviation, style, width, minScale, centered: true);
             // Cap-Höhe der tatsächlich gesetzten (ggf. verkleinerten) Schrift, damit der Text mittig sitzt.
-            var cap = CapHeight(style) * FitScale(team.ShortName, style, width, minScale);
+            var cap = CapHeight(style) * FitScale(abbreviation, style, width, minScale);
             PaintAtBaseline(c, block, box.MidX - width / 2, box.MidY + cap / 2);
             return;
         }

@@ -17,7 +17,7 @@ public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string h
             {
                 using var opponentLogo = await LoadLogoAsync(p.Game.Opponent, ct);
                 using var club = assets.ClubLogo();
-                return Render(request, c => HerrenStory.DrawPreview(c, p, club, opponentLogo, homePlace));
+                return Render(request, c => HerrenStory.DrawPreview(c, p, club, opponentLogo));
             }
             case HerrenResult r:
             {

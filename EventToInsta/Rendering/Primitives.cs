@@ -29,7 +29,7 @@ public static class Primitives
         c.DrawImage(image, dest, Sampling);
     }
 
-    /// <summary>Zeichnet das Logo; ohne Logo ein runder Platzhalter mit dem Kurznamen.</summary>
+    /// <summary>Zeichnet das Logo; ohne Logo ein runder Platzhalter mit dem übergebenen Kürzel.</summary>
     public static void DrawLogoOrBadge(
         SKCanvas c, SKBitmap? logo, string shortName, SKRect box, SKColor badgeFill, SKColor badgeText)
     {

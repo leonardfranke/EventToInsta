@@ -126,7 +126,7 @@ Es gibt (noch) nicht genug Herren-Fotos. Deshalb hat der Auftraggeber am 22.11.2
 - Oben links sitzt ein Etikett, **immer weiß hinterlegt mit blauer Schrift**, damit es sich vom Spielfeld abhebt:
   - in der Vorschau „HEIMSPIEL“ oder „AUSWÄRTSSPIEL“
   - im Ergebnis „ENDSTAND“
-- **Vorschau:** Unter der Schräge steht groß „GAME DAY“, zweizeilig. Der Text bleibt englisch, so hat es der Auftraggeber entschieden. Darunter folgt die Zeile „SAMSTAG, 28.11. · 19:30 UHR“, bei Auswärtsspielen ergänzt um „· {Ort}“.
+- **Vorschau:** Unter der Schräge steht groß „GAME DAY“, zweizeilig. Der Text bleibt englisch, so hat es der Auftraggeber entschieden. Darunter folgt die Zeile „SAMSTAG, 28.11. · 19:30 UHR“, für Heim- und Auswärtsspiele gleich; der Ort steht nur in der Fußzeile.
 - **Ergebnis:** An der Stelle von „GAME DAY“ steht groß der Spielstand im Format Heim : Gast. Die Punkte der unterlegenen Mannschaft sind abgeschwächt. Bei einem Sieg von Bad Laer steht darunter „SIEG!“, bei einer Niederlage gibt es keine Wertungszeile. Danach folgt die Zeile mit Datum und Spielklasse.
 - **Fußzeile:** Unter einer feinen Trennlinie steht nur Text, ohne Logos (die stehen oben), zentriert in zwei Zeilen:
   - groß „{HEIM} VS {GAST}“; Bad Laer erscheint als „HERREN“. Ist die Zeile zu lang, wird sie erst verkleinert und dann nur der Gegnername mit „…“ gekürzt, sodass „VS HERREN“ bzw. „HERREN VS“ lesbar bleibt.
