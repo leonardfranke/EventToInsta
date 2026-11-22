@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace EventToInsta.State;
 
-/// <summary>JSON-Format von posted.json, gemeinsam für Datei- und GCS-Store.</summary>
+/// <summary>JSON-Format von posted.json, gemeinsam fÃ¼r Datei- und GCS-Store.</summary>
 internal static class PostedStateJson
 {
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
@@ -19,7 +19,7 @@ internal static class PostedStateJson
             new Dto(s.PreviewWeek, s.Date?.ToString("yyyy-MM-dd"), s.HerrenMatchIds.ToArray(), s.JugendPosted),
             Options);
 
-    /// <summary>Wirft InvalidDataException (mit <paramref name="source"/> in der Meldung) bei ung�ltigem Inhalt, nie stilles Empty.</summary>
+    /// <summary>Wirft InvalidDataException (mit <paramref name="source"/> in der Meldung) bei ungültigem Inhalt, nie stilles Empty.</summary>
     public static PostedState Deserialize(string json, string source)
     {
         try
@@ -34,7 +34,7 @@ internal static class PostedStateJson
         }
         catch (Exception e) when (e is JsonException or FormatException)
         {
-            throw new InvalidDataException($"Zustandsdatei ung�ltig: {source}", e);
+            throw new InvalidDataException($"Zustandsdatei ungültig: {source}", e);
         }
     }
 }
