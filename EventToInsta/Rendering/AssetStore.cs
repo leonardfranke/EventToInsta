@@ -5,9 +5,11 @@ namespace EventToInsta.Rendering;
 public sealed class AssetStore(
     string imagesDirectory,
     IReadOnlyDictionary<string, string> sponsorByAge,
-    Random random)
+    Random random,
+    Action<string>? log = null)
 {
     private static readonly string[] PhotoExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+    private readonly HashSet<string> _warnedMissing = new(StringComparer.Ordinal);
 
     public SKBitmap RandomHerrenPhoto() => RandomPhoto("Herren")
         ?? throw new InvalidOperationException($"Keine Fotos in {Path.Combine(imagesDirectory, "Herren")}");
@@ -20,7 +22,11 @@ public sealed class AssetStore(
     {
         if (!sponsorByAge.TryGetValue(ageClass, out var file)) return null;
         var path = Path.Combine(imagesDirectory, "Sponsoren", file);
-        return File.Exists(path) ? Decode(path) : null;
+        if (File.Exists(path)) return Decode(path);
+        // Konfigurierter, aber fehlender Sponsor ist ein Konfigurationsfehler: einmal je Datei warnen.
+        if (_warnedMissing.Add(path))
+            log?.Invoke($"Warnung: Sponsor-Logo für {ageClass} nicht gefunden: {path} (SPONSORS prüfen).");
+        return null;
     }
 
     private SKBitmap? RandomPhoto(string folder)

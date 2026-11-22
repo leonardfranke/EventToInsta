@@ -53,6 +53,16 @@ public sealed class AssetStoreTests : IDisposable
     }
 
     [Fact]
+    public void AssetStore_ConfiguredSponsorFileMissing_NullAndWarningLogged()
+    {
+        var log = new List<string>();
+        var store = new AssetStore(_dir, new Dictionary<string, string> { ["U12"] = "fehlt.png" }, new Random(1), log.Add);
+
+        Assert.Null(store.SponsorLogo("U12"));
+        Assert.Contains(log, l => l.Contains("fehlt.png") && l.Contains("U12"));
+    }
+
+    [Fact]
     public void AssetStore_KnownAge_LoadsSponsor()
     {
         WritePng("Sponsoren/a.png");
