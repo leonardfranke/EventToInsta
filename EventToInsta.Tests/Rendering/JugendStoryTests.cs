@@ -166,8 +166,29 @@ public sealed class JugendStoryTests : IDisposable
         var story = await Renderer().RenderAsync(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
 
         using var bmp = Decode(story);
-        foreach (var card in JugendStory.Layout(games.Count).Cards)
-            Assert.True(CountRed(bmp, card) > 500, "Sponsorlogo in jeder Karte erwartet");
+        var layout = JugendStory.Layout(games.Count);
+        foreach (var card in layout.Cards)
+            Assert.True(CountRed(bmp, card) > 200, "Sponsorlogo in jeder Karte erwartet");
+        var middle = JugendStory.ResultMiddleBlock(layout.Cards[^1], sponsored: true);
+        Assert.True(middle.Top >= layout.Cards[^1].Top && middle.Bottom <= layout.Cards[^1].Bottom,
+            "Mittelblock mit Sponsorzeile ragt aus der Karte");
+        Assert.True(layout.Cards[^1].Bottom < layout.FooterTop, "letzte Karte überlappt den Fuß");
+    }
+
+    [Fact]
+    public async Task Result_WithSponsor_DrawsLogoInMiddleBlockBelowInfoLine()
+    {
+        var games = new[] { Jugend(1, "U12", home: true, result: new Score(54, 38)) };
+
+        var story = await Renderer().RenderAsync(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
+
+        using var bmp = Decode(story);
+        var card = JugendStory.Layout(1).Cards[0];
+        var middle = JugendStory.ResultMiddleBlock(card, sponsored: true);
+        // Unterer Teil des Mittelblocks (Sponsorzeile) enthält das rote Testlogo, rechts davon (Spielstand) keines.
+        var sponsorLine = new SKRect(middle.Left, middle.Bottom - 40, middle.Right, middle.Bottom);
+        Assert.True(CountRed(bmp, sponsorLine) > 50, "Sponsorlogo unter der Infozeile erwartet");
+        Assert.Equal(0, CountRed(bmp, new SKRect(middle.Right, card.Top, card.Right, card.Bottom)));
     }
 
     [Theory]
@@ -175,12 +196,12 @@ public sealed class JugendStoryTests : IDisposable
     [InlineData("@ Artland Dragons III")]
     public void ResultCardWithSponsor_CommonNamesFitWithoutEllipsis(string line)
     {
-        // Ungünstigste Spielstand-Spalte („100:100“ / „NIEDERLAGE“) neben dem Sponsor.
-        var width = JugendStory.ResultNameWidthWithSponsor(JugendStory.ScoreColumnWidth([]));
+        // Ungünstigste Spielstand-Spalte („100:100“ / „NIEDERLAGE“); die Sponsorzeile kostet keine Breite.
+        var card = JugendStory.Layout(1).Cards[0];
+        var width = JugendStory.ResultMiddleBlock(card, sponsored: true).Width;
         var natural = StoryText.NaturalWidth(line, JugendStory.ResultNameStyle());
 
-        Assert.True(natural * JugendStory.ResultNameMinScale <= width,
-            $"„{line}“ braucht {natural * JugendStory.ResultNameMinScale:F0} px, verfügbar {width:F0} px");
+        Assert.True(natural <= width, $"„{line}“ braucht {natural:F0} px, verfügbar {width:F0} px");
     }
 
     [Fact]
