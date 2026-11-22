@@ -51,6 +51,27 @@ public class PreviewJobTests
     }
 
     [Fact]
+    public async Task Preview_SavesOnlyAfterPublish()
+    {
+        var store = new InMemoryStateStore();
+        var savesAtPublish = -1;
+        var pub = new RecordingPublisher(onPublishStart: _ => savesAtPublish = store.Saves);
+        await Job(TwoGames(), new FakeRenderer(), pub, store).RunAsync();
+        Assert.Equal(0, savesAtPublish);
+        Assert.Equal(1, store.Saves);
+    }
+
+    [Fact]
+    public async Task Preview_CancelledAfterPublish_StateStillSaved()
+    {
+        using var cts = new CancellationTokenSource();
+        var store = new InMemoryStateStore();
+        var pub = new RecordingPublisher(afterRecorded: _ => cts.Cancel());
+        await Job(TwoGames(), new FakeRenderer(), pub, store).RunAsync(cts.Token);
+        Assert.Equal(Week, store.Current.PreviewWeek);
+    }
+
+    [Fact]
     public async Task Preview_NoGames_NoPublish_NoStateSaved()
     {
         var store = new InMemoryStateStore();

@@ -42,7 +42,8 @@ public sealed class PreviewJob(
         var key = $"preview-{week}";
         await publisher.PublishAsync(new StoryPost(key, images), ct);
         log($"Veröffentlicht: {key}");
-        // Zustand erst nach erfolgreichem Publish speichern.
-        await state.SaveAsync(current.WithPreviewWeek(week), ct);
+        // Zustand erst nach erfolgreichem Publish speichern, und zwar unabhängig vom Abbruch:
+        // Der Beitrag ist öffentlich, die Buchführung darf nicht ausfallen (sonst Duplikat).
+        await state.SaveAsync(current.WithPreviewWeek(week), CancellationToken.None);
     }
 }

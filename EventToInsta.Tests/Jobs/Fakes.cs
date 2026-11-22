@@ -20,21 +20,27 @@ internal sealed class InMemoryStateStore(PostedState? initial = null) : IPostedS
     public Task<PostedState> LoadAsync(CancellationToken ct = default) => Task.FromResult(Current);
     public Task SaveAsync(PostedState state, CancellationToken ct = default)
     {
+        ct.ThrowIfCancellationRequested(); // wie die echten Stores
         Current = state;
         Saves++;
         return Task.CompletedTask;
     }
 }
 
-internal sealed class RecordingPublisher(Func<string, bool>? failFor = null) : IStoryPublisher
+internal sealed class RecordingPublisher(
+    Func<string, bool>? failFor = null,
+    Action<string>? onPublishStart = null,
+    Action<string>? afterRecorded = null) : IStoryPublisher
 {
     public List<StoryPost> Posts { get; } = new();
     public int Calls { get; private set; }
     public Task PublishAsync(StoryPost post, CancellationToken ct = default)
     {
         Calls++;
+        onPublishStart?.Invoke(post.Key);
         if (failFor?.Invoke(post.Key) == true) throw new UploadFailedException("boom " + post.Key);
         Posts.Add(post);
+        afterRecorded?.Invoke(post.Key);
         return Task.CompletedTask;
     }
 }

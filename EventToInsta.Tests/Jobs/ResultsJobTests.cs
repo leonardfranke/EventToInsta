@@ -31,6 +31,30 @@ public class ResultsJobTests
     }
 
     [Fact]
+    public async Task Results_StateSavedAfterEachPublish_NotOnlyAtEnd()
+    {
+        var store = new InMemoryStateStore();
+        var seen = new List<(string Key, bool HerrenSaved, int Saves)>();
+        var pub = new RecordingPublisher(onPublishStart: k =>
+            seen.Add((k, store.Current.HerrenMatchIds.Contains(1), store.Saves)));
+        await Job(Games(), pub, store, At(18)).RunAsync();
+        Assert.Equal(("herren-result-1", false, 0), seen[0]);
+        Assert.Equal(("jugend-result-2026-11-22", true, 1), seen[1]);
+        Assert.Equal(2, store.Saves);
+    }
+
+    [Fact]
+    public async Task Results_CancelledAfterPublish_StateStillSaved()
+    {
+        using var cts = new CancellationTokenSource();
+        var store = new InMemoryStateStore();
+        var pub = new RecordingPublisher(afterRecorded: _ => cts.Cancel());
+        var g = new FakeGameSource(GameFactory.Make(1, At(14), herren: true, result: S));
+        await Job(g, pub, store, At(18)).RunAsync(cts.Token);
+        Assert.Contains(1, store.Current.HerrenMatchIds);
+    }
+
+    [Fact]
     public async Task Results_HerrenFails_JugendStillPosted()
     {
         var store = new InMemoryStateStore();

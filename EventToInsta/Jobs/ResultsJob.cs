@@ -41,7 +41,7 @@ public sealed class ResultsJob(
                 await publisher.PublishAsync(new StoryPost(key, [image]), ct);
                 log($"Veröffentlicht: {key}");
                 current = current.WithHerren(result.Game.MatchId);
-                await state.SaveAsync(current, ct);
+                await state.SaveAsync(current, CancellationToken.None); // nach Publish nie abbrechen
             }
             catch (Exception e) when (!ct.IsCancellationRequested)
             {
@@ -61,7 +61,7 @@ public sealed class ResultsJob(
                 await publisher.PublishAsync(new StoryPost(key, images), ct);
                 log($"Veröffentlicht: {key}");
                 current = current.WithJugendPosted();
-                await state.SaveAsync(current, ct);
+                await state.SaveAsync(current, CancellationToken.None); // nach Publish nie abbrechen
             }
             catch (Exception e) when (!ct.IsCancellationRequested)
             {
