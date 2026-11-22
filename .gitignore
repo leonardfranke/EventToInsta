@@ -364,3 +364,6 @@ FodyWeavers.xsd
 # Brainstorming-Entwürfe
 .superpowers/
 .worktrees/
+# Testläufe und lokaler Zustand
+Output/
+posted.json

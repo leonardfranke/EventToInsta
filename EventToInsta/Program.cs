@@ -1,58 +1,47 @@
-﻿using System.Net.Http.Headers;
+﻿namespace EventToInsta;
 
-namespace EventToInsta
+internal static class Program
 {
-    internal static class Program
+    /// <returns>0 bei Erfolg, 1 bei Fehler (Meldung auf stderr).</returns>
+    public static async Task<int> Main(string[] args)
     {
-        public static async Task Main(string[] args)
+        RunOptions options;
+        try
         {
-            var outputPath = Path.Combine(AppContext.BaseDirectory, "Output");
-            Directory.CreateDirectory(outputPath);
+            options = RunOptions.Parse(args);
+        }
+        catch (ArgumentException e)
+        {
+            Console.Error.WriteLine(e.Message);
+            return 1;
+        }
 
-            var matches = await MatchesLoader.LoadMatches();
-
-            var seniorenMatches = matches.Where(match => match.Age == "Senioren");
-            foreach (var match in seniorenMatches)
-            {
-                var background = ImageLoader.LoadSenioren();
-                var image = await ImageCreator.CreateSeniorenImage(match, background);
-
-                await using var output = File.OpenWrite(Path.Combine(outputPath, "output.png"));
-                image.SaveTo(output);
-
-                image.Dispose();
-            }
-            var jugendMatches = matches
-                .Where(match => match.Age != "Senioren")
-                .OrderBy(match => match.TipoffTime)
-                .GroupBy(match => match.TipoffTime.DayOfYear)
-                .OrderBy(group => group.Key);
-            foreach (var matchGroup in jugendMatches)
-            {
-                var background = ImageLoader.LoadSenioren();
-                var image = await ImageCreator.CreateJugendImage(matchGroup, background);
-
-                var fileName = $"output_{matchGroup.Key}.png";
-                await using var output = File.OpenWrite(Path.Combine(outputPath, fileName));
-                image.SaveTo(output);
-                image.Dispose();
-            }
-
-            return;
-            var outputFiles = Directory.GetFiles(outputPath);
-            var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Apikey", Environment.GetEnvironmentVariable("upload_posts_api_key"));
-            var form = new MultipartFormDataContent();
-            foreach (var outputfile in outputFiles)
-                form.Add(new StringContent("photos[]"), outputfile);
-            form.Add(new StringContent("user"), "Dachse");
-            form.Add(new StringContent("platform[]"), "instagram");
-            form.Add(new StringContent("media_type"), "STORIES");
-
-            var uploadURl = "https://api.upload-post.com/api/upload";
-            var request = await httpClient.PostAsync(uploadURl, form);
-            var response = await request.Content.ReadAsStringAsync();
-            Console.WriteLine(response);
+        using var cts = new CancellationTokenSource();
+        ConsoleCancelEventHandler onCancel = (_, e) =>
+        {
+            e.Cancel = true;
+            cts.Cancel();
+        };
+        Console.CancelKeyPress += onCancel;
+        try
+        {
+            var config = AppConfig.FromEnvironment(Environment.GetEnvironmentVariable);
+            var run = CompositionRoot.Build(config, options, Console.WriteLine);
+            await run(cts.Token);
+            return 0;
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine($"Fehler: {Describe(e)}");
+            return 1;
+        }
+        finally
+        {
+            Console.CancelKeyPress -= onCancel;
         }
     }
+
+    /// <summary>Meldung samt Ursachen; AggregateException.Message enthält die inneren Meldungen bereits.</summary>
+    private static string Describe(Exception e) =>
+        e is AggregateException || e.InnerException is null ? e.Message : $"{e.Message} ({Describe(e.InnerException)})";
 }

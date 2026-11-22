@@ -13,7 +13,7 @@ namespace EventToInsta.Data
         Task<byte[]?> LoadTeamLogoAsync(int teamPermanentId, CancellationToken ct = default);
     }
 
-    public sealed class BasketballBundClient(HttpClient http, int clubId) : IGameSource, ILogoSource
+    public sealed class BasketballBundClient(HttpClient http, int clubId, Action<string>? log = null) : IGameSource, ILogoSource
     {
         private const int MinLogoBytes = 2000;
 
@@ -21,8 +21,7 @@ namespace EventToInsta.Data
         {
             var response = await http.GetFromJsonAsync<MatchesResponse>(
                 $"rest/club/id/{clubId}/actualmatches?justHome=false&rangeDays=7", ct);
-            var games = GameMapper.Map(response?.Data?.Matches ?? new List<MatchDto>(), clubId,
-                msg => Console.WriteLine(msg));
+            var games = GameMapper.Map(response?.Data?.Matches ?? new List<MatchDto>(), clubId, log);
 
             var result = new List<Game>();
             foreach (var game in games)

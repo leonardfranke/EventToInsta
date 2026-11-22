@@ -6,8 +6,6 @@ using SkiaSharp;
 
 namespace EventToInsta.Tests.Rendering;
 
-using Team = EventToInsta.Domain.Team;
-
 [Collection("Fonts")]
 public sealed class HerrenStoryTests : IDisposable
 {

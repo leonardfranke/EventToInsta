@@ -6,8 +6,6 @@ using static EventToInsta.Rendering.StoryText;
 
 namespace EventToInsta.Rendering;
 
-using Team = EventToInsta.Domain.Team;
-
 /// <summary>
 /// Herren-Stories im Stil „Matchday“. Geometrie aus den Entwürfen (300 px breit) mal 3,6.
 /// Alle Textzeilen werden über ihre Grundlinie gesetzt, damit die Abstände unabhängig von den

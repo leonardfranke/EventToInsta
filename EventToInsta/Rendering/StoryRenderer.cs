@@ -5,8 +5,6 @@ using SkiaSharp;
 
 namespace EventToInsta.Rendering;
 
-using Team = EventToInsta.Domain.Team;
-
 public record RenderedStory(string FileName, byte[] Jpeg);
 
 public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string homePlace) : IStoryRenderer
