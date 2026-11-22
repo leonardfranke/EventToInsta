@@ -1,0 +1,5 @@
+# Lokale Build-Ausgaben nicht hochladen; der Buildpack baut selbst (dotnet publish).
+.gcloudignore
+bin/
+obj/
+*.user

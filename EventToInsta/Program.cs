@@ -1,10 +1,18 @@
-﻿namespace EventToInsta;
+﻿using Google.Cloud.Functions.Hosting;
+
+namespace EventToInsta;
 
 internal static class Program
 {
+    /// <summary>
+    /// Als Cloud Function (FUNCTION_TARGET gesetzt) startet der Functions-Host, sonst die CLI.
+    /// </summary>
     /// <returns>0 bei Erfolg, 1 bei Fehler (Meldung auf stderr).</returns>
     public static async Task<int> Main(string[] args)
     {
+        if (RunsAsFunction(Environment.GetEnvironmentVariable))
+            return await EntryPoint.StartAsync(typeof(CloudFunction).Assembly, args);
+
         RunOptions options;
         try
         {
@@ -40,6 +48,9 @@ internal static class Program
             Console.CancelKeyPress -= onCancel;
         }
     }
+
+    internal static bool RunsAsFunction(Func<string, string?> env) =>
+        !string.IsNullOrEmpty(env("FUNCTION_TARGET"));
 
     /// <summary>Meldung samt Ursachen; AggregateException.Message enthält die inneren Meldungen bereits.</summary>
     private static string Describe(Exception e) =>

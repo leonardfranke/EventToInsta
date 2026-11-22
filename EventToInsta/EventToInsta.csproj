@@ -5,10 +5,13 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Program.Main startet selbst den Functions-Host (FUNCTION_TARGET) oder die CLI. -->
+    <AutoGenerateEntryPoint>false</AutoGenerateEntryPoint>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Google.Cloud.Functions.Framework" Version="3.0.1" />
+    <PackageReference Include="Google.Cloud.Functions.Hosting" Version="3.0.1" />
     <PackageReference Include="Google.Cloud.Storage.V1" Version="5.0.0" />
     <PackageReference Include="SkiaSharp" Version="3.119.1" />
     <PackageReference Include="Topten.RichTextKit" Version="0.4.167" />
@@ -21,6 +24,7 @@
   <ItemGroup>
 	  <Content Include="Images\**;Assets\**">
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		  <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
 	  </Content>
   </ItemGroup>
 

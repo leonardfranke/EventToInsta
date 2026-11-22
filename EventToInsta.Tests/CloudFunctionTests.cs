@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 
 namespace EventToInsta.Tests;
 
+[Collection(ConsoleCollection.Name)]
 public class CloudFunctionTests
 {
     private static async Task<(int Status, string Body)> InvokeAsync(string query)

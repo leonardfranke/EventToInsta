@@ -18,4 +18,15 @@ public class ClockTests
         var clock = new SystemClock(() => DateTimeOffset.Parse("2026-07-04T10:00:00Z"));
         Assert.Equal(12, clock.Now.Hour);
     }
+
+    [Fact]
+    public void LoadBerlin_MissingTimeZoneData_ThrowsClearMessage()
+    {
+        var e = Assert.Throws<InvalidOperationException>(() =>
+            SystemClock.LoadBerlin(_ => throw new TimeZoneNotFoundException("not found")));
+
+        Assert.Contains("Europe/Berlin", e.Message);
+        Assert.Contains("Zeitzone", e.Message);
+        Assert.IsType<TimeZoneNotFoundException>(e.InnerException);
+    }
 }

@@ -1,5 +1,6 @@
 namespace EventToInsta.Tests;
 
+[Collection(ConsoleCollection.Name)]
 public class ProgramArgsTests
 {
     [Fact]
