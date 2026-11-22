@@ -32,7 +32,7 @@ public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string h
                     JugendStory.DrawPreview(c, jp, photo, assets.SponsorLogo, homePlace));
             case JugendResult jr:
                 return Render(request, assets.RandomJugendPhoto, (c, photo) =>
-                    JugendStory.DrawResult(c, jr, photo));
+                    JugendStory.DrawResult(c, jr, photo, assets.SponsorLogo));
             default:
                 throw new NotSupportedException($"Unbekannte Story: {request.GetType().Name}");
         }

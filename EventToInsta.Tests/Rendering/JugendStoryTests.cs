@@ -125,6 +125,51 @@ public sealed class JugendStoryTests : IDisposable
         Assert.True(loss.Red > 150 && loss.Green > 160 && loss.Blue > 180, $"grauer Rand erwartet, war {loss}");
     }
 
+    private static int CountRed(SKBitmap bmp, SKRect card)
+    {
+        var count = 0;
+        for (var y = (int)card.Top; y < (int)card.Bottom; y += 2)
+        for (var x = (int)card.Left; x < (int)card.Right; x += 2)
+        {
+            var p = bmp.GetPixel(x, y);
+            if (p.Red > 200 && p.Green < 80 && p.Blue < 80) count++;
+        }
+        return count;
+    }
+
+    [Fact]
+    public async Task Result_WithSponsor_DrawsSponsorLogoOnlyForSponsoredAgeClass()
+    {
+        var games = new[]
+        {
+            Jugend(1, "U12", home: true, result: new Score(54, 38)),   // Sponsor (rotes Testlogo)
+            Jugend(2, "U16", home: false, result: new Score(47, 41)),  // kein Sponsor
+        };
+
+        var story = await Renderer().RenderAsync(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
+
+        using var bmp = Decode(story);
+        var cards = JugendStory.Layout(2).Cards;
+        Assert.True(CountRed(bmp, cards[0]) > 500, "Sponsorlogo in der U12-Karte erwartet");
+        Assert.Equal(0, CountRed(bmp, cards[1]));
+    }
+
+    [Fact]
+    public async Task Result_SixSponsoredCardsLongNamesThreeDigitScores_DoesNotThrow()
+    {
+        var name = "Turn- und Sportverein Bad Rothenfelde von 1898 e.V. Basketball";
+        var games = Enumerable.Range(1, JugendStory.MaxCards)
+            .Select(i => Jugend(i, i % 2 == 0 ? "U12" : "U14", home: i % 2 == 0, opponent: name,
+                result: i % 3 == 0 ? new Score(100, 101) : new Score(101, 100)))
+            .ToList();
+
+        var story = await Renderer().RenderAsync(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
+
+        using var bmp = Decode(story);
+        foreach (var card in JugendStory.Layout(games.Count).Cards)
+            Assert.True(CountRed(bmp, card) > 500, "Sponsorlogo in jeder Karte erwartet");
+    }
+
     [Fact]
     public void Layout_MaxCards_FitsBetweenHeaderAndFooterWithoutOverlap()
     {

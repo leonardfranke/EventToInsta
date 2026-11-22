@@ -62,7 +62,7 @@ public static class JugendStory
         DrawFooter(c, "KOMMT VORBEI & FEUERT UNS AN!");
     }
 
-    public static void DrawResult(SKCanvas c, JugendResult r, SKBitmap photo)
+    public static void DrawResult(SKCanvas c, JugendResult r, SKBitmap photo, Func<string, SKBitmap?> sponsorFor)
     {
         EnsureFits(r.Games.Count);
         if (r.Games.Any(g => !g.HasResult))
@@ -73,7 +73,11 @@ public static class JugendStory
 
         var layout = Layout(r.Games.Count);
         for (var i = 0; i < r.Games.Count; i++)
-            DrawResultCard(c, layout.Cards[i], r.Games[i]);
+        {
+            var g = r.Games[i];
+            using var sponsor = sponsorFor(g.AgeClass);
+            DrawResultCard(c, layout.Cards[i], g, sponsor);
+        }
 
         DrawFooter(c, "STARK GESPIELT, TEAMS!");
     }
@@ -201,7 +205,7 @@ public static class JugendStory
             info, Body(700, 9.5f * S, Theme.MutedText));
     }
 
-    private static void DrawResultCard(SKCanvas c, SKRect card, Game g)
+    private static void DrawResultCard(SKCanvas c, SKRect card, Game g, SKBitmap? sponsor)
     {
         var win = g.IsWin == true;
         DrawCardBody(c, card, border: win ? Theme.Blue : Theme.Grey);
@@ -211,6 +215,9 @@ public static class JugendStory
         var color = win ? Theme.Blue : Theme.LossText;
         var right = DrawResultColumn(c, $"{g.OwnPoints}:{g.OpponentPoints}", win ? "SIEG" : "NIEDERLAGE",
             color, card.Right - PadX, card.MidY) - ColumnGap;
+        // Sponsor sitzt zwischen Gegnerblock und Spielstand, gleiche Gestaltung wie in der Vorschau.
+        if (sponsor != null)
+            right = DrawSponsor(c, sponsor, right, card.MidY) - ColumnGap;
 
         DrawTwoLines(c, age.Right + ColumnGap, right, card.MidY,
             OpponentLine(g), Display(13 * S, Theme.Blue),
