@@ -1,0 +1,40 @@
+{
+  "status": "0",
+  "data": {
+    "matches": [
+      {
+        "matchId": 1001,
+        "ligaData": { "akName": "U14", "skName": "Bezirksliga U14" },
+        "homeTeam": { "teamPermanentId": 5001, "teamname": "SV Bad Laer (AK)", "teamnameSmall": "Bad Laer", "clubId": 621, "verzicht": false },
+        "guestTeam": { "teamPermanentId": 5002, "teamname": "TV Dissen", "teamnameSmall": "Dissen", "clubId": 700, "verzicht": false },
+        "kickoffDate": "2026-11-21",
+        "kickoffTime": "15:00",
+        "result": "62:48",
+        "abgesagt": false,
+        "verzicht": false
+      },
+      {
+        "matchId": 1002,
+        "ligaData": { "akName": "U16", "skName": "Landesliga U16" },
+        "homeTeam": { "teamPermanentId": 5003, "teamname": "BBC Osnabrück", "teamnameSmall": "Osnabrück", "clubId": 701, "verzicht": false },
+        "guestTeam": { "teamPermanentId": 5004, "teamname": "SV Bad Laer", "teamnameSmall": "Bad Laer", "clubId": 621, "verzicht": false },
+        "kickoffDate": "2026-11-22",
+        "kickoffTime": "11:00",
+        "result": null,
+        "abgesagt": true,
+        "verzicht": false
+      },
+      {
+        "matchId": 1003,
+        "ligaData": { "akName": "Senioren", "skName": "Bezirksliga Herren" },
+        "homeTeam": { "teamPermanentId": 5005, "teamname": "SV Bad Laer", "teamnameSmall": "Bad Laer", "clubId": 621, "verzicht": false },
+        "guestTeam": { "teamPermanentId": 5006, "teamname": "TuS Melle", "teamnameSmall": "Melle", "clubId": 702, "verzicht": false },
+        "kickoffDate": "2026-11-28",
+        "kickoffTime": "19:30",
+        "result": null,
+        "abgesagt": false,
+        "verzicht": false
+      }
+    ]
+  }
+}

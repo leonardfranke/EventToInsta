@@ -22,4 +22,8 @@
     <ProjectReference Include="..\EventToInsta\EventToInsta.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Data/actualmatches.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
