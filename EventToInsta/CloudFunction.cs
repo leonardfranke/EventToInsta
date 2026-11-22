@@ -6,6 +6,14 @@ namespace EventToInsta;
 /// <summary>HTTP-Einstieg für Cloud Scheduler: <c>?job=preview|results</c>. Läuft nie als Testlauf.</summary>
 public sealed class CloudFunction : IHttpFunction
 {
+    private readonly Func<string, string?> _getEnv;
+
+    /// <summary>Vom Functions-Framework genutzt: liest die echte Umgebung.</summary>
+    public CloudFunction() : this(Environment.GetEnvironmentVariable) { }
+
+    /// <summary>Für Tests: Umgebung austauschbar. Internal, damit das Framework nur den parameterlosen Konstruktor sieht.</summary>
+    internal CloudFunction(Func<string, string?> getEnv) => _getEnv = getEnv;
+
     public async Task HandleAsync(HttpContext context)
     {
         var job = context.Request.Query["job"].ToString();
@@ -19,7 +27,7 @@ public sealed class CloudFunction : IHttpFunction
 
         try
         {
-            var config = AppConfig.FromEnvironment(Environment.GetEnvironmentVariable);
+            var config = AppConfig.FromEnvironment(_getEnv);
             var run = CompositionRoot.Build(config, new RunOptions(job, DryRun: false, Sample: false, Now: null), Console.WriteLine,
                 requireStateBucket: true);
             await run(context.RequestAborted);

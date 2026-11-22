@@ -5,14 +5,15 @@ namespace EventToInsta.Tests;
 [Collection(ConsoleCollection.Name)]
 public class CloudFunctionTests
 {
-    private static async Task<(int Status, string Body)> InvokeAsync(string query)
+    private static async Task<(int Status, string Body)> InvokeAsync(string query, Func<string, string?>? env = null)
     {
         var context = new DefaultHttpContext();
         context.Request.QueryString = new QueryString(query);
         using var body = new MemoryStream();
         context.Response.Body = body;
 
-        await new CloudFunction().HandleAsync(context);
+        var function = env is null ? new CloudFunction() : new CloudFunction(env);
+        await function.HandleAsync(context);
 
         return (context.Response.StatusCode, System.Text.Encoding.UTF8.GetString(body.ToArray()));
     }
@@ -31,11 +32,8 @@ public class CloudFunctionTests
     [Fact]
     public async Task WithoutStateBucket_Returns500BeforeLoadingAnything()
     {
-        // Die Prüfung liest die echte Umgebung; ist STATE_BUCKET auf der Maschine gesetzt, ist der Fall nicht prüfbar.
-        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("STATE_BUCKET")))
-            return;
-
-        var (status, body) = await InvokeAsync("?job=results");
+        // Leere Umgebung statt der echten: der Test gilt auch, wenn STATE_BUCKET auf der Maschine gesetzt ist.
+        var (status, body) = await InvokeAsync("?job=results", _ => null);
 
         Assert.Equal(500, status);
         Assert.Contains("STATE_BUCKET ist nicht gesetzt", body);
