@@ -15,6 +15,17 @@
     <PackageReference Include="Google.Cloud.Storage.V1" Version="5.0.0" />
     <PackageReference Include="SkiaSharp" Version="3.119.1" />
     <PackageReference Include="Topten.RichTextKit" Version="0.4.167" />
+    <!--
+      Linux-Natives (Cloud Functions) passend zu den verwalteten Paketen. RichTextKit zieht sonst transitiv
+      SkiaSharp.NativeAssets.Linux 2.88.7 und HarfBuzzSharp.NativeAssets.Linux 2.8.2.3 herein, die nicht zu
+      SkiaSharp 3.119.1 bzw. HarfBuzzSharp 7.3.0.1 passen (jedes Rendern schlägt dann fehl).
+      NoDependencies: libSkiaSharp.so ohne fontconfig-Abhängigkeit (Schriften werden ohnehin explizit geladen).
+      Das transitive SkiaSharp.NativeAssets.Linux wird angehoben und ganz ausgeschlossen, damit nur eine
+      libSkiaSharp.so im Publish landet.
+    -->
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.1" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.1" ExcludeAssets="all" />
+    <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="7.3.0.1" />
   </ItemGroup>
 
   <ItemGroup>

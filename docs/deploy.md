@@ -170,8 +170,16 @@ bringt beides mit; geprüft wird es trotzdem einmal in den Logs eines manuellen 
   Zeitzonendaten (tzdata/ICU): …` (HTTP 500).
 - **ICU fehlt:** Die Function startet gar nicht, im Log steht `Couldn't find a valid ICU package installed on the system`.
   Nicht mit `InvariantGlobalization` umgehen, sonst gibt es keine deutschen Texte (`de-DE`).
-- **Grafik:** Ein Fehler zu `libSkiaSharp` (z. B. `DllNotFoundException`) deutet auf fehlende Systembibliotheken
-  (fontconfig) hin; dann `SkiaSharp.NativeAssets.Linux.NoDependencies` statt der Standard-Linux-Assets einbinden.
+- **Grafik:** Das Projekt bindet die Linux-Natives direkt ein, passend zu den verwalteten Paketen:
+  `SkiaSharp.NativeAssets.Linux.NoDependencies` 3.119.1 (zu `SkiaSharp` 3.119.1) und
+  `HarfBuzzSharp.NativeAssets.Linux` 7.3.0.1 (zu `HarfBuzzSharp` 7.3.0.1). Die Variante `NoDependencies`
+  braucht kein fontconfig im Laufzeit-Image (Schriften werden ohnehin explizit aus `Assets/Fonts` geladen).
+  Das von `Topten.RichTextKit` transitiv gezogene `SkiaSharp.NativeAssets.Linux` (2.88.7) ist ausgeschlossen.
+  Fehler wie `DllNotFoundException`, `EntryPointNotFoundException` oder „incompatible native library“ zu
+  `libSkiaSharp`/`libHarfBuzzSharp` bedeuten, dass wieder ein unpassendes Native-Paket im Publish gelandet ist.
+  Prüfen: `dotnet publish EventToInsta -c Release -r linux-x64 --self-contained false -o publish-linux`, dann
+  in `EventToInsta/obj/project.assets.json` die Versionen von `*.NativeAssets.Linux*` mit `SkiaSharp` und
+  `HarfBuzzSharp` vergleichen. Beim Anheben von SkiaSharp oder RichTextKit die Native-Versionen mitziehen.
 - Auf den Stories: deutsche Wochentage und Monatsnamen, Anpfiffzeiten in Berliner Ortszeit,
   Schriften Anton und Inter (keine Ersatzschrift).
 
