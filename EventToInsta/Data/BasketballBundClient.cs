@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using System.Text.Json;
 using EventToInsta.Domain;
 
 namespace EventToInsta.Data
@@ -39,8 +40,9 @@ namespace EventToInsta.Data
                 var bytes = await response.Content.ReadAsByteArrayAsync(ct);
                 return bytes.Length < MinLogoBytes ? null : bytes;
             }
-            catch (HttpRequestException)
+            catch (Exception e) when (IsTransient(e, ct))
             {
+                log?.Invoke($"Warnung: Logo von Team {teamPermanentId} nicht geladen ({e.GetType().Name}: {e.Message}).");
                 return null;
             }
         }
@@ -52,10 +54,19 @@ namespace EventToInsta.Data
                 var info = await http.GetFromJsonAsync<MatchInfoResponse>($"rest/match/id/{matchId}/matchInfo", ct);
                 return info?.Data?.MatchInfo?.Spielfeld?.Ort;
             }
-            catch (HttpRequestException)
+            catch (Exception e) when (IsTransient(e, ct))
             {
+                log?.Invoke($"Warnung: Spielort für Spiel {matchId} nicht geladen ({e.GetType().Name}: {e.Message}).");
                 return null;
             }
         }
+
+        /// <summary>
+        /// Fehler einer einzelnen Zusatzabfrage, die den Lauf nicht abbrechen dürfen: Netzwerk, ungültiges JSON,
+        /// falscher Content-Type und HttpClient-Timeout (TaskCanceledException ohne Abbruch durch den Aufrufer).
+        /// </summary>
+        private static bool IsTransient(Exception e, CancellationToken ct) =>
+            e is HttpRequestException or JsonException or NotSupportedException
+            || (e is OperationCanceledException && !ct.IsCancellationRequested);
     }
 }
