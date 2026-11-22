@@ -19,14 +19,22 @@ internal static class PostedStateJson
             new Dto(s.PreviewWeek, s.Date?.ToString("yyyy-MM-dd"), s.HerrenMatchIds.ToArray(), s.JugendPosted),
             Options);
 
-    public static PostedState Deserialize(string json)
+    /// <summary>Wirft InvalidDataException (mit <paramref name="source"/> in der Meldung) bei ungültigem Inhalt, nie stilles Empty.</summary>
+    public static PostedState Deserialize(string json, string source)
     {
-        var dto = JsonSerializer.Deserialize<Dto>(json, Options);
-        if (dto is null) return PostedState.Empty;
-        return new PostedState(
-            dto.PreviewWeek,
-            dto.Date is null ? null : DateOnly.ParseExact(dto.Date, "yyyy-MM-dd"),
-            dto.HerrenMatchIds ?? Array.Empty<int>(),
-            dto.JugendPosted);
+        try
+        {
+            var dto = JsonSerializer.Deserialize<Dto>(json, Options)
+                      ?? throw new JsonException("Inhalt ist null.");
+            return new PostedState(
+                dto.PreviewWeek,
+                dto.Date is null ? null : DateOnly.ParseExact(dto.Date, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture),
+                dto.HerrenMatchIds ?? Array.Empty<int>(),
+                dto.JugendPosted);
+        }
+        catch (Exception e) when (e is JsonException or FormatException)
+        {
+            throw new InvalidDataException($"Zustandsdatei ungültig: {source}", e);
+        }
     }
 }

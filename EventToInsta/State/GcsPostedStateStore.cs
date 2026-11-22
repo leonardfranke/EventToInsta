@@ -15,7 +15,7 @@ public sealed class GcsPostedStateStore(StorageClient client, string bucket) : I
         {
             using var ms = new MemoryStream();
             await client.DownloadObjectAsync(bucket, ObjectName, ms, cancellationToken: ct);
-            return PostedStateJson.Deserialize(Encoding.UTF8.GetString(ms.ToArray()));
+            return PostedStateJson.Deserialize(Encoding.UTF8.GetString(ms.ToArray()), $"gs://{bucket}/{ObjectName}");
         }
         catch (GoogleApiException e) when (e.HttpStatusCode == HttpStatusCode.NotFound)
         {

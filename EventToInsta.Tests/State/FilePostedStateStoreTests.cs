@@ -33,4 +33,34 @@ public class FilePostedStateStoreTests
         Assert.Empty(loaded.HerrenMatchIds);
         Assert.False(loaded.JugendPosted);
     }
+
+    [Theory]
+    [InlineData("{ not json")]
+    [InlineData("{\"date\": \"22.11.2026\"}")]
+    public async Task FileStore_CorruptFile_ThrowsNamingPath(string content)
+    {
+        var path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
+        try
+        {
+            await File.WriteAllTextAsync(path, content);
+            var ex = await Assert.ThrowsAsync<InvalidDataException>(() => new FilePostedStateStore(path).LoadAsync());
+            Assert.Contains(path, ex.Message);
+            Assert.NotNull(ex.InnerException);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public async Task FileStore_Save_CreatesDirectoryAndLeavesNoTmp()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        var path = Path.Combine(dir, "sub", "posted.json");
+        try
+        {
+            await new FilePostedStateStore(path).SaveAsync(PostedState.Empty.WithJugendPosted());
+            Assert.True(File.Exists(path));
+            Assert.False(File.Exists(path + ".tmp"));
+        }
+        finally { Directory.Delete(dir, true); }
+    }
 }
