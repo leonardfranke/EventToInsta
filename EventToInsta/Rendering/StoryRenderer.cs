@@ -9,7 +9,7 @@ using Team = EventToInsta.Domain.Team;
 
 public record RenderedStory(string FileName, byte[] Jpeg);
 
-public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string homePlace)
+public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string homePlace) : IStoryRenderer
 {
     public async Task<RenderedStory> RenderAsync(StoryRequest request, CancellationToken ct = default)
     {

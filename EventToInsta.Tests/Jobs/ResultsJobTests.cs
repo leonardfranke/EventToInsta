@@ -1,0 +1,73 @@
+using EventToInsta.Domain;
+using EventToInsta.Jobs;
+using EventToInsta.State;
+using EventToInsta.Tests.Planning;
+using EventToInsta.Time;
+
+namespace EventToInsta.Tests.Jobs;
+
+public class ResultsJobTests
+{
+    private static readonly Score S = new(50, 40);
+    private static DateTime At(int hour, int day = 22) => new(2026, 11, day, hour, 0, 0);
+
+    private static ResultsJob Job(FakeGameSource g, RecordingPublisher p, InMemoryStateStore s, DateTime now) =>
+        new(g, new FakeRenderer(), p, s, new FixedClock(now), 6, _ => { });
+
+    private static FakeGameSource Games() => new(
+        GameFactory.Make(1, At(14), herren: true, result: S),
+        GameFactory.Make(2, At(10), result: S));
+
+    [Fact]
+    public async Task Results_HerrenPublished_StateSavedBeforeJugend()
+    {
+        var store = new InMemoryStateStore();
+        var pub = new RecordingPublisher(k => k.StartsWith("jugend"));
+        var ex = await Assert.ThrowsAsync<AggregateException>(() => Job(Games(), pub, store, At(18)).RunAsync());
+        Assert.Single(ex.InnerExceptions);
+        Assert.Contains(1, store.Current.HerrenMatchIds);
+        Assert.False(store.Current.JugendPosted);
+        Assert.Equal(new[] { "herren-result-1" }, pub.Posts.Select(p => p.Key));
+    }
+
+    [Fact]
+    public async Task Results_HerrenFails_JugendStillPosted()
+    {
+        var store = new InMemoryStateStore();
+        var pub = new RecordingPublisher(k => k.StartsWith("herren"));
+        await Assert.ThrowsAsync<AggregateException>(() => Job(Games(), pub, store, At(18)).RunAsync());
+        Assert.Empty(store.Current.HerrenMatchIds);
+        Assert.True(store.Current.JugendPosted);
+        Assert.Equal("jugend-result-2026-11-22", Assert.Single(pub.Posts).Key);
+    }
+
+    [Fact]
+    public async Task Results_SecondRunSameDay_DoesNotRepostHerren()
+    {
+        var store = new InMemoryStateStore();
+        var pub = new RecordingPublisher();
+        await Job(Games(), pub, store, At(18)).RunAsync();
+        Assert.Equal(2, pub.Posts.Count);
+        await Job(Games(), pub, store, At(19)).RunAsync();
+        Assert.Equal(2, pub.Posts.Count);
+    }
+
+    [Fact]
+    public async Task Results_NewDay_ResetsDailyState()
+    {
+        var yesterday = new DateOnly(2026, 11, 21);
+        var store = new InMemoryStateStore(PostedState.Empty.ForDay(yesterday).WithHerren(1).WithJugendPosted());
+        var pub = new RecordingPublisher();
+        await Job(Games(), pub, store, At(18)).RunAsync();
+        Assert.Equal(2, pub.Posts.Count);
+        Assert.Equal(new DateOnly(2026, 11, 22), store.Current.Date);
+    }
+
+    [Fact]
+    public async Task Results_Nothing_NoSave()
+    {
+        var store = new InMemoryStateStore();
+        await Job(new FakeGameSource(), new RecordingPublisher(), store, At(18)).RunAsync();
+        Assert.Equal(0, store.Saves);
+    }
+}
