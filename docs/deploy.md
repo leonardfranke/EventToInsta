@@ -18,9 +18,17 @@ Alle Befehle laufen im Wurzelverzeichnis des Repositorys (dort liegt der Ordner 
 | `<INVOKER_SA>`     | Service-Account, mit dem Cloud Scheduler die Function aufruft                                 |
 | `<FUNCTION_URL>`   | URL der Function, ohne Query (siehe Schritt 5)                                                |
 
-Ohne `--service-account` beim Deploy läuft eine Function der 2. Generation unter dem
-Compute-Standardkonto: `<RUNTIME_SA>` = `<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`.
-Nach dem Deploy lässt es sich prüfen:
+Empfohlen ist ein eigener Laufzeit-Service-Account nur für diese Function, der genau zwei Rechte bekommt:
+`roles/secretmanager.secretAccessor` auf dem Secret (Schritt 2) und `roles/storage.objectAdmin` auf dem
+Bucket (Schritt 4). Ohne `--service-account` liefe die Function unter dem Compute-Standardkonto
+(`<PROJECT_NUMBER>-compute@developer.gserviceaccount.com`), das in vielen Projekten weitreichende Rechte hat.
+
+```sh
+gcloud iam service-accounts create eventtoinsta-runtime --display-name="EventToInsta Function"
+# <RUNTIME_SA> = eventtoinsta-runtime@<PROJECT_ID>.iam.gserviceaccount.com
+```
+
+Nach dem Deploy lässt sich prüfen, unter welchem Konto die Function läuft:
 
 ```sh
 gcloud functions describe eventtoinsta --gen2 --region=europe-west3 \
@@ -77,7 +85,7 @@ Wegen `:latest` greift er beim nächsten Kaltstart, sofort mit einem erneuten De
 ```sh
 gcloud functions deploy eventtoinsta --gen2 --runtime=dotnet8 --region=europe-west3 \
   --source=EventToInsta --entry-point=EventToInsta.CloudFunction --trigger-http --no-allow-unauthenticated \
-  --memory=512Mi --timeout=300s \
+  --memory=512Mi --timeout=1800s --service-account=<RUNTIME_SA> \
   --set-env-vars=STATE_BUCKET=<BUCKET>,UPLOAD_POST_USER=Dachse \
   --set-secrets=UPLOAD_POST_API_KEY=<SECRET_NAME>:latest
 ```
@@ -113,19 +121,32 @@ gcloud functions describe eventtoinsta --gen2 --region=europe-west3 --format='va
 
 ## 6. Scheduler-Jobs
 
-Beide Jobs ohne Wiederholungen (`--max-retry-attempts=0`): Ein Fehlschlag wird beim nächsten
-regulären Lauf nachgeholt, und doppelte Posts verhindern Zustand und `Idempotency-Key`.
-Das OIDC-Token braucht als Audience die URL **ohne** Query. `--attempt-deadline=300s` passt zum
-Function-Timeout; mit dem Standard von 180 s würde der Scheduler einen langen Lauf abbrechen.
+Beide Jobs ohne Wiederholungen (`--max-retry-attempts=0`). Doppelte Posts verhindern Zustand und
+`Idempotency-Key`. Was nach einem Fehlschlag passiert, hängt vom Job ab:
+
+- **Ergebnisse:** Ein fehlgeschlagener Beitrag wird beim nächsten stündlichen Lauf nachgeholt.
+- **Vorschau:** Läuft nur montags um 08:00. Ein Fehlschlag wird **nicht** automatisch nachgeholt, sondern
+  muss von Hand neu ausgelöst werden (`gcloud scheduler jobs run eventtoinsta-preview --location=europe-west3`).
+  Das ist gefahrlos: Ist die Vorschau der Woche schon gepostet (`previewWeek` in `posted.json`), wird
+  sie übersprungen.
+- **Ausnahme:** Steht im Log `VERÖFFENTLICHT, Zustand NICHT gespeichert – <key> – nicht erneut auslösen`,
+  ist der Beitrag online, aber `posted.json` wurde nicht geschrieben. Dann **nicht** erneut auslösen
+  (Ergebnisse: Job pausieren), sondern zuerst den Bucket-Fehler beheben und `posted.json` von Hand
+  nachtragen (`previewWeek` bzw. `date`, `herrenMatchIds`, `jugendPosted` für den Tag).
+
+Das OIDC-Token braucht als Audience die URL **ohne** Query. Die Uploads laufen nacheinander mit je bis
+zu 120 s Timeout; deshalb Function-Timeout `1800s` (2. Generation erlaubt bei HTTP bis 3600 s) und
+`--attempt-deadline=1800s` (Höchstwert bei Cloud Scheduler). Mit dem Standard von 180 s würde der
+Scheduler einen langen Lauf abbrechen.
 
 ```sh
 gcloud scheduler jobs create http eventtoinsta-preview --location=europe-west3 \
-  --schedule="0 8 * * 1" --time-zone="Europe/Berlin" --max-retry-attempts=0 --attempt-deadline=300s \
+  --schedule="0 8 * * 1" --time-zone="Europe/Berlin" --max-retry-attempts=0 --attempt-deadline=1800s \
   --uri="<FUNCTION_URL>?job=preview" --http-method=GET \
   --oidc-service-account-email=<INVOKER_SA> --oidc-token-audience="<FUNCTION_URL>"
 
 gcloud scheduler jobs create http eventtoinsta-results --location=europe-west3 \
-  --schedule="0 12-23 * * *" --time-zone="Europe/Berlin" --max-retry-attempts=0 --attempt-deadline=300s \
+  --schedule="0 12-23 * * *" --time-zone="Europe/Berlin" --max-retry-attempts=0 --attempt-deadline=1800s \
   --uri="<FUNCTION_URL>?job=results" --http-method=GET \
   --oidc-service-account-email=<INVOKER_SA> --oidc-token-audience="<FUNCTION_URL>"
 ```
@@ -148,9 +169,30 @@ gcloud storage cat gs://<BUCKET>/posted.json
 > **Achtung:** Jeder Aufruf mit `?job=preview` oder `?job=results` postet echt auf Instagram. Einen
 > Testlauf (`--dry-run`) gibt es nur in der CLI, nie in der Function.
 
+## Abnahmeprüfung upload-post.com (vor dem Aktivieren des Schedulers)
+
+Der Schutz vor Doppelposts bei Wiederholungen beruht auf dem `Idempotency-Key` (je Bild
+`<postKey>-<Bildname>`, z. B. `jugend-result-2026-11-22-jugend-result-2026-11-22-1-1a2b3c4d`). Zwei
+Eigenschaften von upload-post.com sind dafür **nicht dokumentiert** und müssen vor dem Fortsetzen der
+Scheduler-Jobs geklärt sein (Support fragen oder mit dem Test-Profil ausprobieren):
+
+1. **Aufbewahrungsdauer:** Wie lange merkt sich upload-post.com einen `Idempotency-Key`? Er muss
+   mindestens bis zum nächsten Wiederholungslauf halten (Ergebnisse: Stunden, Vorschau: bis zum
+   manuellen Neuauslösen, also unter Umständen Tage).
+2. **Fehlgeschlagener Job:** Was liefert ein erneuter Aufruf mit dem Key eines Jobs, der bei
+   upload-post.com **fehlgeschlagen** ist? Erwartet wird ein neuer Versuch. Liefert er stattdessen
+   die alte Fehlerantwort, wird das Bild nie gepostet; liefert er `success: true` ohne neuen Upload,
+   wird es fälschlich als gepostet verbucht.
+
+Sind die Antworten ungünstig (kurze Aufbewahrung, Fehler-Jobs werden nicht neu versucht), gilt der
+Ausweichweg: angenommene Teile eines Beitrags einzeln in `posted.json` speichern und bei einer
+Wiederholung nur die fehlenden Bilder hochladen, statt sich auf den Key zu verlassen. Das ist eine
+Code-Änderung und vor dem Aktivieren der Jobs umzusetzen.
+
 ## Erster sicherer Test
 
-1. Deployen, Scheduler-Jobs anlegen und sofort pausieren (siehe oben).
+1. Deployen, Scheduler-Jobs anlegen und sofort pausieren (siehe oben). Die Abnahmeprüfung
+   upload-post.com (oben) muss erledigt sein, bevor die Jobs fortgesetzt werden.
 2. Möglichst zuerst gegen ein Test-Profil von upload-post.com: den `deploy`-Befehl aus Schritt 3 mit
    `UPLOAD_POST_USER=<TEST_PROFIL>` statt `Dachse` ausführen.
 3. Erst wenn der Auftraggeber bereit ist und zuschaut: `gcloud scheduler jobs run eventtoinsta-preview --location=europe-west3`.
