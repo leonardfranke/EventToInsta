@@ -20,7 +20,8 @@ public sealed class CloudFunction : IHttpFunction
         try
         {
             var config = AppConfig.FromEnvironment(Environment.GetEnvironmentVariable);
-            var run = CompositionRoot.Build(config, new RunOptions(job, DryRun: false, Sample: false, Now: null), Console.WriteLine);
+            var run = CompositionRoot.Build(config, new RunOptions(job, DryRun: false, Sample: false, Now: null), Console.WriteLine,
+                requireStateBucket: true);
             await run(context.RequestAborted);
             context.Response.StatusCode = StatusCodes.Status200OK;
             await context.Response.WriteAsync("ok");

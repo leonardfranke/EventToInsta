@@ -20,10 +20,18 @@ public static class CompositionRoot
     /// Prüft die Konfiguration sofort (z. B. fehlender API-Key) und liefert den Lauf. HTTP-Clients leben nur
     /// für die Dauer eines Laufs, damit wiederholte Aufrufe der Cloud Function keine Verbindungen anhäufen.
     /// </summary>
-    public static Func<CancellationToken, Task> Build(AppConfig cfg, RunOptions opt, Action<string> log)
+    /// <param name="requireStateBucket">
+    /// True für die Cloud Function: dort ist das Dateisystem flüchtig, ein lokaler Zustand würde bei jedem Aufruf
+    /// verloren gehen und zu doppelten Beiträgen führen. Ohne STATE_BUCKET wird dann sofort abgebrochen.
+    /// </param>
+    public static Func<CancellationToken, Task> Build(AppConfig cfg, RunOptions opt, Action<string> log, bool requireStateBucket = false)
     {
         if (!RunOptions.Jobs.Contains(opt.Job))
             throw new ArgumentException($"Unbekannter Job: \"{opt.Job}\"");
+        if (opt.Sample && !opt.DryRun)
+            throw new ArgumentException("--sample ist nur zusammen mit --dry-run erlaubt (Beispieldaten dürfen nie gepostet werden).");
+        if (requireStateBucket && !opt.DryRun && cfg.StateBucket is null)
+            throw new InvalidOperationException("STATE_BUCKET ist nicht gesetzt. Die Cloud Function braucht den Bucket für den Zustand.");
         if (!opt.DryRun && cfg.UploadPostApiKey is null)
             throw new InvalidOperationException(
                 "UPLOAD_POST_API_KEY ist nicht gesetzt. Ohne --dry-run wird der API-Key von upload-post.com benötigt.");

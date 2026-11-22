@@ -41,6 +41,7 @@ public class ProgramArgsTests
     [InlineData("--now", "23.11.2026")]
     [InlineData("--unbekannt")]
     [InlineData("results")]
+    [InlineData("--sample")]
     public void Parse_InvalidOptions_Throw(params string[] rest) =>
         Assert.Throws<ArgumentException>(() => RunOptions.Parse(["preview", .. rest]));
 

@@ -26,4 +26,17 @@ public class CloudFunctionTests
         Assert.Equal(400, status);
         Assert.Contains("preview", body);
     }
+
+    [Fact]
+    public async Task WithoutStateBucket_Returns500BeforeLoadingAnything()
+    {
+        // Die Prüfung liest die echte Umgebung; ist STATE_BUCKET auf der Maschine gesetzt, ist der Fall nicht prüfbar.
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("STATE_BUCKET")))
+            return;
+
+        var (status, body) = await InvokeAsync("?job=results");
+
+        Assert.Equal(500, status);
+        Assert.Contains("STATE_BUCKET ist nicht gesetzt", body);
+    }
 }

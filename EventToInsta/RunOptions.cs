@@ -52,6 +52,8 @@ public record RunOptions(string Job, bool DryRun, bool Sample, DateTime? Now)
                     throw Error($"Unbekanntes Argument: \"{args[i]}\".");
             }
         }
+        if (sample && !dryRun)
+            throw Error("--sample ist nur zusammen mit --dry-run erlaubt.");
         return new RunOptions(job, dryRun, sample, now);
     }
 
