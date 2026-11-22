@@ -12,6 +12,11 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <!--
+      Wie im Hauptprojekt: ExcludeAssets wirkt nicht transitiv, ohne diese Zeile landet hier die
+      libSkiaSharp.so mit fontconfig-Abhängigkeit statt der NoDependencies-Variante (Tests unter Linux).
+    -->
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.1" ExcludeAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
