@@ -21,7 +21,7 @@ public sealed class AssetStoreTests : IDisposable
     }
 
     private AssetStore Store(Dictionary<string, string>? sponsors = null) =>
-        new(_dir, sponsors ?? new Dictionary<string, string>(), new Random(1));
+        new(_dir, sponsors ?? new Dictionary<string, string>());
 
     [Fact]
     public void AssetStore_UnknownAge_NoSponsor()
@@ -35,7 +35,7 @@ public sealed class AssetStoreTests : IDisposable
     public void AssetStore_ConfiguredSponsorFileMissing_NullAndWarningLogged()
     {
         var log = new List<string>();
-        var store = new AssetStore(_dir, new Dictionary<string, string> { ["U12"] = "fehlt.png" }, new Random(1), log.Add);
+        var store = new AssetStore(_dir, new Dictionary<string, string> { ["U12"] = "fehlt.png" }, log.Add);
 
         Assert.Null(store.SponsorLogo("U12"));
         Assert.Contains(log, l => l.Contains("fehlt.png") && l.Contains("U12"));

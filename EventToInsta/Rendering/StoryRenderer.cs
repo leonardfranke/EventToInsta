@@ -17,15 +17,13 @@ public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string h
             {
                 using var opponentLogo = await LoadLogoAsync(p.Game.Opponent, ct);
                 using var club = assets.ClubLogo();
-                return Render(request, assets.RandomHerrenPhoto, (c, photo) =>
-                    HerrenStory.DrawPreview(c, p, photo, club, opponentLogo, homePlace));
+                return Render(request, c => HerrenStory.DrawPreview(c, p, club, opponentLogo, homePlace));
             }
             case HerrenResult r:
             {
                 using var opponentLogo = await LoadLogoAsync(r.Game.Opponent, ct);
                 using var club = assets.ClubLogo();
-                return Render(request, assets.RandomHerrenPhoto, (c, photo) =>
-                    HerrenStory.DrawResult(c, r, photo, club, opponentLogo));
+                return Render(request, c => HerrenStory.DrawResult(c, r, club, opponentLogo));
             }
             case JugendPreview jp:
                 return Render(request, c => JugendStory.DrawPreview(c, jp, assets.SponsorLogo, homePlace));
@@ -34,12 +32,6 @@ public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string h
             default:
                 throw new NotSupportedException($"Unbekannte Story: {request.GetType().Name}");
         }
-    }
-
-    private static RenderedStory Render(StoryRequest request, Func<SKBitmap> loadPhoto, Action<SKCanvas, SKBitmap> draw)
-    {
-        using var photo = loadPhoto();
-        return Render(request, c => draw(c, photo));
     }
 
     private static RenderedStory Render(StoryRequest request, Action<SKCanvas> draw)
@@ -61,7 +53,7 @@ public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string h
         }
         catch (Exception) when (!ct.IsCancellationRequested)
         {
-            // Fehlendes oder kaputtes Logo darf die Story nicht verhindern: dann zeigt der Fuß das Badge.
+            // Fehlendes oder kaputtes Logo darf die Story nicht verhindern: dann zeigt die Story das Badge.
             return null;
         }
     }

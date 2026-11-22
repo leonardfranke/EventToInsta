@@ -7,7 +7,9 @@ using static EventToInsta.Rendering.StoryText;
 namespace EventToInsta.Rendering;
 
 /// <summary>
-/// Herren-Stories im Stil „Matchday“. Geometrie aus den Entwürfen (300 px breit) mal 3,6.
+/// Herren-Stories im Stil „Matchday“, Variante B „Duell im Fokus“ aus herren-platzhalter.html:
+/// oben statt eines Fotos der Spielfeld-Hintergrund mit beiden Logos groß gegenüber, die Fußzeile nur Text.
+/// Geometrie aus den Entwürfen (300 px breit) mal 3,6.
 /// Alle Textzeilen werden über ihre Grundlinie gesetzt, damit die Abstände unabhängig von den
 /// Zeilenmetriken der Schrift fest bleiben und sich nichts überlappt.
 /// </summary>
@@ -16,19 +18,26 @@ public static class HerrenStory
     private const float S = 3.6f;
     private const float Margin = 20 * S;
 
-    private const float PhotoBottomLeft = 293 * S;
-    private const float PhotoBottomRight = 220 * S;
+    private const float TopBottomLeft = 293 * S;
+    private const float TopBottomRight = 220 * S;
     private const float StripeHeight = 11 * S;
     private const float LineTopLeft = 309 * S;
     private const float LineTopRight = 236 * S;
     private const float LineHeight = 4 * S;
 
-    // Fußzeile: Trennlinie, darunter Logos (44 px) mit 12 px Abstand, 20 px Rand unten.
-    private const float LogoSize = 44 * S;
+    // Logo-Duell im oberen Bereich: Heim links, Gast rechts, dazwischen „VS“.
+    private const float DuelY = 150 * S;
+    private const float DuelLeftX = 78 * S;
+    private const float DuelRightX = 222 * S;
+    private const float DiscRadius = 47.5f * S;
+
+    // Fußzeile: Trennlinie, darunter mit 12 px Abstand ein 44 px hoher Textblock, 20 px Rand unten.
     private const float FooterBottom = Theme.Height - Margin;
-    private const float FooterLogoTop = FooterBottom - LogoSize;
-    private const float FooterRule = FooterLogoTop - 12 * S;
-    private const float FooterGap = 10 * S;
+    private const float FooterTop = FooterBottom - 44 * S;
+    private const float FooterRule = FooterTop - 12 * S;
+    private const float FooterLineGap = 7 * S;
+    private const float FooterMinScale = 0.75f;
+    private const string HomeHall = "SPORTHALLE BAD LAER";
 
     // Unterer Inhaltsblock: Infozeile endet deutlich über der Trennlinie.
     private const float InfoGapAboveRule = 52;
@@ -44,15 +53,15 @@ public static class HerrenStory
 
     private static readonly SKColor Dimmed = Theme.White.WithAlpha(140);
 
-    public static void DrawPreview(SKCanvas c, HerrenPreview r, SKBitmap photo, SKBitmap clubLogo, SKBitmap? opponentLogo) =>
-        DrawPreview(c, r, photo, clubLogo, opponentLogo, homePlace: null);
+    public static void DrawPreview(SKCanvas c, HerrenPreview r, SKBitmap clubLogo, SKBitmap? opponentLogo) =>
+        DrawPreview(c, r, clubLogo, opponentLogo, homePlace: null);
 
     internal static void DrawPreview(
-        SKCanvas c, HerrenPreview r, SKBitmap photo, SKBitmap clubLogo, SKBitmap? opponentLogo, string? homePlace)
+        SKCanvas c, HerrenPreview r, SKBitmap clubLogo, SKBitmap? opponentLogo, string? homePlace)
     {
         var g = r.Game;
-        DrawBackground(c, photo);
-        DrawTag(c, g.IsHome ? "HEIMSPIEL" : "AUSWÄRTSSPIEL", win: false);
+        DrawBackground(c, g, clubLogo, opponentLogo);
+        DrawTag(c, g.IsHome ? "HEIMSPIEL" : "AUSWÄRTSSPIEL");
 
         // „GAME“ / „DAY“: 54 px, Zeilenhöhe 0,92.
         var big = new Style { FontFamily = Theme.Display, FontSize = 54 * S, TextColor = Theme.White, LetterSpacing = 1 * S };
@@ -68,17 +77,18 @@ public static class HerrenStory
             info += $" · {g.Place.Trim()}";
         DrawLeft(c, info.ToUpper(Theme.German), InfoStyle(), Margin, InfoBaseline, Theme.Width - 2 * Margin, minScale: 0.7f);
 
-        DrawFooter(c, g, clubLogo, opponentLogo);
+        var hall = g.IsHome ? HomeHall : g.Place;
+        DrawFooter(c, g, Join(hall, g.League));
     }
 
-    public static void DrawResult(SKCanvas c, HerrenResult r, SKBitmap photo, SKBitmap clubLogo, SKBitmap? opponentLogo)
+    public static void DrawResult(SKCanvas c, HerrenResult r, SKBitmap clubLogo, SKBitmap? opponentLogo)
     {
         var g = r.Game;
         var score = g.Result ?? throw new ArgumentException("Herren-Ergebnis ohne Spielstand", nameof(r));
         var win = g.IsWin == true;
 
-        DrawBackground(c, photo);
-        DrawTag(c, "ENDSTAND", win);
+        DrawBackground(c, g, clubLogo, opponentLogo);
+        DrawTag(c, "ENDSTAND");
         DrawScore(c, score);
 
         if (win)
@@ -90,7 +100,7 @@ public static class HerrenStory
         var info = $"{g.Kickoff.ToString("dddd", Theme.German)}, {g.Kickoff.ToString("dd.MM.", Theme.German)} · {g.League}";
         DrawCentered(c, info.ToUpper(Theme.German), InfoStyle(), Margin, Theme.Width - 2 * Margin, InfoBaseline, minScale: 0.7f);
 
-        DrawFooter(c, g, clubLogo, opponentLogo);
+        DrawFooter(c, g, Join(g.League));
     }
 
     private static Style InfoStyle() => new()
@@ -102,22 +112,23 @@ public static class HerrenStory
         LetterSpacing = 1 * S,
     };
 
-    private static void DrawBackground(SKCanvas c, SKBitmap photo)
+    private static void DrawBackground(SKCanvas c, Game g, SKBitmap clubLogo, SKBitmap? opponentLogo)
     {
         c.Clear(Theme.Blue);
 
-        using (var clip = Polygon((0, 0), (Theme.Width, 0), (Theme.Width, PhotoBottomRight), (0, PhotoBottomLeft)))
+        using (var clip = Polygon((0, 0), (Theme.Width, 0), (Theme.Width, TopBottomRight), (0, TopBottomLeft)))
         {
             c.Save();
             c.ClipPath(clip, antialias: true);
-            Primitives.DrawCover(c, photo, new SKRect(0, 0, Theme.Width, PhotoBottomLeft));
+            CourtBackground.Draw(c, new SKRect(0, 0, Theme.Width, Theme.Height));
+            DrawDuel(c, g, clubLogo, opponentLogo);
             c.Restore();
         }
 
         using var white = new SKPaint { Color = Theme.White, IsAntialias = true };
         using (var stripe = Polygon(
-                   (0, PhotoBottomLeft), (Theme.Width, PhotoBottomRight),
-                   (Theme.Width, PhotoBottomRight + StripeHeight), (0, PhotoBottomLeft + StripeHeight)))
+                   (0, TopBottomLeft), (Theme.Width, TopBottomRight),
+                   (Theme.Width, TopBottomRight + StripeHeight), (0, TopBottomLeft + StripeHeight)))
             c.DrawPath(stripe, white);
 
         using var light = new SKPaint { Color = Theme.LightBlue, IsAntialias = true };
@@ -127,13 +138,50 @@ public static class HerrenStory
         c.DrawPath(line, light);
     }
 
-    private static void DrawTag(SKCanvas c, string text, bool win)
+    /// <summary>Beide Logos groß gegenüber (Heim links, Gast rechts), dazwischen „VS“.</summary>
+    private static void DrawDuel(SKCanvas c, Game g, SKBitmap clubLogo, SKBitmap? opponentLogo)
     {
+        DrawTeamDisc(c, g, g.HomeTeam, clubLogo, opponentLogo, DuelLeftX);
+        DrawTeamDisc(c, g, g.GuestTeam, clubLogo, opponentLogo, DuelRightX);
+
+        var vs = new Style { FontFamily = Theme.Display, FontSize = 26 * S, TextColor = Theme.White };
+        var gapLeft = DuelLeftX + DiscRadius;
+        DrawCentered(c, "VS", vs, gapLeft, DuelRightX - DiscRadius - gapLeft, DuelY + CapHeight(vs) / 2);
+    }
+
+    private static void DrawTeamDisc(SKCanvas c, Game g, Team team, SKBitmap clubLogo, SKBitmap? opponentLogo, float centreX)
+    {
+        var box = new SKRect(centreX - DiscRadius, DuelY - DiscRadius, centreX + DiscRadius, DuelY + DiscRadius);
+        var logo = team == g.Us ? clubLogo : opponentLogo;
+        // Weißer Kreis auch hinter Logos, damit dunkle Logos auf dem Spielfeld lesbar bleiben.
+        using var disc = new SKPaint { Color = Theme.White, IsAntialias = true };
+        c.DrawCircle(box.MidX, box.MidY, DiscRadius, disc);
+
+        if (logo == null)
+        {
+            // Badge mit Kurzname: erst verkleinern, erst danach mit „…“ kürzen.
+            var style = new Style { FontFamily = Theme.Display, FontSize = 24 * S, TextColor = Theme.Blue };
+            var width = box.Width * 0.8f;
+            const float minScale = 0.5f;
+            var block = Fit(team.ShortName, style, width, minScale, centered: true);
+            // Cap-Höhe der tatsächlich gesetzten (ggf. verkleinerten) Schrift, damit der Text mittig sitzt.
+            var cap = CapHeight(style) * FitScale(team.ShortName, style, width, minScale);
+            PaintAtBaseline(c, block, box.MidX - width / 2, box.MidY + cap / 2);
+            return;
+        }
+
+        var inset = box.Width * LogoInset;
+        Primitives.DrawContained(c, logo, SKRect.Inflate(box, -inset, -inset));
+    }
+
+    private static void DrawTag(SKCanvas c, string text)
+    {
+        // Immer weiß mit blauer Schrift, damit das Etikett auf dem Spielfeld-Hintergrund heraussticht.
         var style = new Style
         {
             FontFamily = Theme.Display,
             FontSize = 14 * S,
-            TextColor = win ? Theme.Blue : Theme.White,
+            TextColor = Theme.Blue,
             LetterSpacing = 2 * S,
         };
         var block = TextFit.Line(text, style, Theme.Width - 2 * Margin);
@@ -143,7 +191,7 @@ public static class HerrenStory
         var left = 18 * S;
         var top = 18 * S;
         var width = block.MeasuredWidth - style.LetterSpacing + 2 * padX;
-        using var fill = new SKPaint { Color = win ? Theme.White : Theme.Blue, IsAntialias = true };
+        using var fill = new SKPaint { Color = Theme.White, IsAntialias = true };
         c.DrawRect(SKRect.Create(left, top, width, cap + 2 * padY), fill);
         PaintAtBaseline(c, block, left + padX, top + padY + cap);
     }
@@ -189,44 +237,61 @@ public static class HerrenStory
         }
     }
 
-    private static void DrawFooter(SKCanvas c, Game g, SKBitmap clubLogo, SKBitmap? opponentLogo)
+    /// <summary>
+    /// Fuß ohne Logos (die stehen oben): „{HEIM} VS {GAST}“ und darunter klein Halle/Spielklasse,
+    /// beide zentriert und gemeinsam senkrecht mittig im Block unter der Trennlinie.
+    /// </summary>
+    private static void DrawFooter(SKCanvas c, Game g, string? detail)
     {
         using var rule = new SKPaint { Color = Theme.White.WithAlpha(64), IsAntialias = true };
         c.DrawRect(SKRect.Create(Margin, FooterRule, Theme.Width - 2 * Margin, 1 * S), rule);
 
-        var leftBox = SKRect.Create(Margin, FooterLogoTop, LogoSize, LogoSize);
-        var rightBox = SKRect.Create(Theme.Width - Margin - LogoSize, FooterLogoTop, LogoSize, LogoSize);
-        DrawTeamLogo(c, g, g.HomeTeam, clubLogo, opponentLogo, leftBox);
-        DrawTeamLogo(c, g, g.GuestTeam, clubLogo, opponentLogo, rightBox);
-
-        var style = new Style { FontFamily = Theme.Display, FontSize = 15 * S, TextColor = Theme.White };
-        var textLeft = leftBox.Right + FooterGap;
-        var textWidth = rightBox.Left - FooterGap - textLeft;
-        var cap = CapHeight(style);
-        var pitch = 15 * S * 1.2f;
-        var firstBaseline = leftBox.MidY - (pitch + cap) / 2 + cap;
-        DrawCentered(c, Label(g, g.HomeTeam), style, textLeft, textWidth, firstBaseline);
-        DrawCentered(c, "VS " + Label(g, g.GuestTeam), style, textLeft, textWidth, firstBaseline + pitch);
-    }
-
-    private static void DrawTeamLogo(SKCanvas c, Game g, Team team, SKBitmap clubLogo, SKBitmap? opponentLogo, SKRect box)
-    {
-        var logo = team == g.Us ? clubLogo : opponentLogo;
-        if (logo == null)
+        var teams = new Style { FontFamily = Theme.Display, FontSize = 15 * S, TextColor = Theme.White };
+        var small = new Style
         {
-            Primitives.DrawLogoOrBadge(c, null, team.ShortName, box, Theme.White, Theme.Blue);
-            return;
-        }
+            FontFamily = Theme.Body,
+            FontWeight = 700,
+            FontSize = 10 * S,
+            TextColor = Theme.PaleBlue,
+            LetterSpacing = 1 * S,
+        };
+        var teamsCap = CapHeight(teams);
+        var smallCap = CapHeight(small);
+        var height = detail == null ? teamsCap : teamsCap + FooterLineGap + smallCap;
+        var teamsBaseline = (FooterTop + FooterBottom) / 2 - height / 2 + teamsCap;
+        var width = Theme.Width - 2 * Margin;
 
-        // Weißer Kreis wie beim Badge, damit auch dunkle Logos auf Blau lesbar bleiben.
-        using var disc = new SKPaint { Color = Theme.White, IsAntialias = true };
-        c.DrawCircle(box.MidX, box.MidY, Math.Min(box.Width, box.Height) / 2, disc);
-        var inset = Math.Min(box.Width, box.Height) * LogoInset;
-        Primitives.DrawContained(c, logo, SKRect.Inflate(box, -inset, -inset));
+        DrawCentered(c, TeamsLine(g, teams, width, FooterMinScale), teams, Margin, width, teamsBaseline, FooterMinScale);
+        if (detail != null)
+            DrawCentered(c, detail, small, Margin, width, teamsBaseline + FooterLineGap + smallCap,
+                minScale: 0.7f, letterSpacingCorrection: true);
     }
 
-    private static string Label(Game g, Team team) =>
-        team == g.Us ? "HERREN" : team.Name.ToUpper(Theme.German);
+    /// <summary>Verbindet die vorhandenen Teile mit „ · “ in Großbuchstaben; leere Teile entfallen.</summary>
+    private static string? Join(params string?[] parts)
+    {
+        var text = string.Join(" · ", parts.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p!.Trim()));
+        return text.Length == 0 ? null : text.ToUpper(Theme.German);
+    }
+
+    /// <summary>
+    /// „{HEIM} VS {GAST}“. Passt die Zeile auch verkleinert nicht, wird nur der Gegnername mit „…“ gekürzt,
+    /// damit „HERREN“ und „VS“ immer lesbar bleiben.
+    /// </summary>
+    internal static string TeamsLine(Game g, Style style, float width, float minScale)
+    {
+        string Line(string opponent) => g.IsHome ? $"HERREN VS {opponent}" : $"{opponent} VS HERREN";
+        bool Fits(string text) => NaturalWidth(text, style) * minScale <= width * 0.99f;
+
+        var name = g.Opponent.Name.ToUpper(Theme.German);
+        if (Fits(Line(name))) return Line(name);
+        for (var n = name.Length - 1; n > 0; n--)
+        {
+            var shortened = name[..n].TrimEnd(' ', '-', '.', ',') + "…";
+            if (Fits(Line(shortened))) return Line(shortened);
+        }
+        return Line("…");
+    }
 
     private static SKPath Polygon(params (float X, float Y)[] points)
     {

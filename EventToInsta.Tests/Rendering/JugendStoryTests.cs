@@ -37,9 +37,9 @@ public sealed class JugendStoryTests : IDisposable
             Task.FromResult<byte[]?>(null);
     }
 
-    private StoryRenderer Renderer(int seed = 1) =>
-        new(new AssetStore(_dir, new Dictionary<string, string> { ["U12"] = "sponsor.png", ["U14"] = "sponsor.png" },
-            new Random(seed)), new NoLogos(), "Bad Laer");
+    private StoryRenderer Renderer() =>
+        new(new AssetStore(_dir, new Dictionary<string, string> { ["U12"] = "sponsor.png", ["U14"] = "sponsor.png" }),
+            new NoLogos(), "Bad Laer");
 
     private static Game Jugend(
         int id, string age, bool home = true, string opponent = "SC Melle II", Score? result = null,
@@ -95,8 +95,8 @@ public sealed class JugendStoryTests : IDisposable
         WritePng("Herren/c.png", 1600, 1200, SKColors.Yellow);
         var request = new JugendPreview(true, WeekStart, WeekEnd, [Jugend(1, "U12"), Jugend(2, "U14")], 1, 1);
 
-        var first = await Renderer(1).RenderAsync(request);
-        var second = await Renderer(2).RenderAsync(request);
+        var first = await Renderer().RenderAsync(request);
+        var second = await Renderer().RenderAsync(request);
 
         Assert.Equal(first.Jpeg, second.Jpeg);
     }
