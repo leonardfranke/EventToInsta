@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace EventToInsta.State;
 
-/// <summary>JSON-Format von posted.json, gemeinsam fÃ¼r Datei- und GCS-Store.</summary>
+/// <summary>JSON-Format von posted.json, gemeinsam für Datei- und GCS-Store.</summary>
 internal static class PostedStateJson
 {
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
