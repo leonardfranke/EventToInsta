@@ -59,8 +59,10 @@ public static class CompositionRoot
                 logos = client;
             }
 
+            // Lebt wie die HTTP-Clients genau einen Lauf; Dispose erst nach dem Job (inkl. Speichern des Zustands).
+            using var storage = !opt.DryRun && cfg.StateBucket is not null ? await StorageClient.CreateAsync() : null;
             IPostedStateStore state = opt.DryRun ? new NullPostedStateStore()
-                : cfg.StateBucket is { } bucket ? new GcsPostedStateStore(await StorageClient.CreateAsync(), bucket)
+                : storage is not null ? new GcsPostedStateStore(storage, cfg.StateBucket!)
                 : new FilePostedStateStore(StateFile);
 
             IStoryPublisher publisher;
