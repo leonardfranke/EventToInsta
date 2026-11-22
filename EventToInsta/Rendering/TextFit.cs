@@ -1,3 +1,4 @@
+using System.Text;
 using Topten.RichTextKit;
 
 namespace EventToInsta.Rendering;
@@ -21,7 +22,23 @@ public static class TextFit
             EllipsisEnabled = true,
             Alignment = alignment,
         };
-        block.AddText(text, style);
+        block.AddText(Sanitize(text, style), style);
         return block;
+    }
+
+    /// <summary>
+    /// RichTextKit fällt für Zeichen ohne Glyphe selbst auf Systemschriften zurück (am FontMapper vorbei).
+    /// Damit nie Systemschriften gerendert werden, wird jedes Zeichen, das die gebündelte Schrift nicht
+    /// enthält, durch „?“ ersetzt.
+    /// </summary>
+    private static string Sanitize(string text, Style style)
+    {
+        var face = FontMapper.Default.TypefaceFromStyle(style, false);
+        var sb = new StringBuilder(text.Length);
+        foreach (var rune in text.EnumerateRunes())
+            sb.Append(char.IsWhiteSpace((char)Math.Min(rune.Value, 0xFFFF)) || face.ContainsGlyph(rune.Value)
+                ? rune.ToString()
+                : "?");
+        return sb.ToString();
     }
 }
