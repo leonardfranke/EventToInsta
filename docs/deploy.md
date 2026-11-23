@@ -101,10 +101,16 @@ Statt Schritt 3 von Hand: `.github/workflows/deploy.yml` (GitHub → Actions →
 „Run workflow“). Der Workflow lässt die Tests laufen und führt dann denselben `deploy`-Befehl aus. Das
 Profil bei upload-post.com ist ein Eingabefeld (Standard `Dachse`).
 
+Den API-Key pflegt man nur in GitHub, als Repo-Secret `UPLOAD_POST_API_KEY`. Vor dem Deploy schreibt
+der Workflow den Key als neue Version in `upload-post-api-key` (Secret Manager), aber nur, wenn er sich
+geändert hat. Die Function liest den Key wie oben über `--set-secrets`, nie im Klartext. Neuer Key:
+GitHub-Secret ändern und den Workflow neu starten.
+
 Die Anmeldung läuft schlüssellos über Workload Identity Federation (Pool `github`, Provider
 `github-eventtoinsta`, nur für das Repo `leonardfranke/EventToInsta`). Dabei übernimmt der Workflow den
 Service-Account `eventtoinsta-deployer`. Dessen Rechte: `roles/cloudfunctions.developer` im Projekt und
-`roles/iam.serviceAccountUser` auf `eventtoinsta-runtime` und auf dem Compute-Standardkonto (Build). Das
+`roles/iam.serviceAccountUser` auf `eventtoinsta-runtime` und auf dem Compute-Standardkonto (Build) sowie
+`roles/secretmanager.secretVersionAdder` und `roles/secretmanager.secretAccessor` auf dem Secret. Das
 Compute-Standardkonto hat `roles/cloudbuild.builds.builder`.
 
 ## 4. Bucket-Rechte für die Function

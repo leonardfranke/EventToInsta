@@ -47,6 +47,24 @@ jobs:
 
       - uses: google-github-actions/setup-gcloud@v2
 
+      # Quelle des Keys ist das GitHub-Secret UPLOAD_POST_API_KEY. Die Function liest ihn aus Secret Manager.
+      # Eine neue Version entsteht nur, wenn sich der Key geändert hat.
+      - name: API-Key nach Secret Manager
+        env:
+          KEY: ${{ secrets.UPLOAD_POST_API_KEY }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "::error::GitHub-Secret UPLOAD_POST_API_KEY fehlt oder ist leer."
+            exit 1
+          fi
+          current="$(gcloud secrets versions access latest --secret="$SECRET_NAME" --project="$PROJECT_ID" 2>/dev/null || true)"
+          if [ "$current" = "$KEY" ]; then
+            echo "Key unverändert, keine neue Version."
+          else
+            printf '%s' "$KEY" | gcloud secrets versions add "$SECRET_NAME" --project="$PROJECT_ID" --data-file=- --quiet
+            echo "Neue Version von $SECRET_NAME angelegt."
+          fi
+
       - name: Deploy
         env:
           UPLOAD_POST_USER: ${{ inputs.upload_post_user }}
