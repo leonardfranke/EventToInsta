@@ -95,6 +95,18 @@ Zum Build: Der Buildpack führt `dotnet publish` im Ordner `EventToInsta/` aus. 
 `bin/` und `obj/` aus dem Upload heraus. `Program.Main` erkennt die Function an der Variablen
 `FUNCTION_TARGET`, die die Plattform setzt, und startet dann den Functions-Host statt der CLI.
 
+### Deploy per GitHub Action
+
+Statt Schritt 3 von Hand: `.github/workflows/deploy.yml` (GitHub → Actions → „Deploy Cloud Function“ →
+„Run workflow“). Der Workflow lässt die Tests laufen und führt dann denselben `deploy`-Befehl aus. Das
+Profil bei upload-post.com ist ein Eingabefeld (Standard `Dachse`).
+
+Die Anmeldung läuft schlüssellos über Workload Identity Federation (Pool `github`, Provider
+`github-eventtoinsta`, nur für das Repo `leonardfranke/EventToInsta`). Dabei übernimmt der Workflow den
+Service-Account `eventtoinsta-deployer`. Dessen Rechte: `roles/cloudfunctions.developer` im Projekt und
+`roles/iam.serviceAccountUser` auf `eventtoinsta-runtime` und auf dem Compute-Standardkonto (Build). Das
+Compute-Standardkonto hat `roles/cloudbuild.builds.builder`.
+
 ## 4. Bucket-Rechte für die Function
 
 ```sh

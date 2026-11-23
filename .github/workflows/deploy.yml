@@ -1,0 +1,59 @@
+name: Deploy Cloud Function
+
+# Manuell starten: GitHub → Actions → "Deploy Cloud Function" → "Run workflow" (Branch wählbar).
+on:
+  workflow_dispatch:
+    inputs:
+      upload_post_user:
+        description: "Profil bei upload-post.com (für Tests ein Test-Profil statt Dachse)"
+        required: true
+        default: Dachse
+
+# Nie zwei Deploys gleichzeitig.
+concurrency:
+  group: deploy-cloud-function
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: eventtoinsta
+  REGION: europe-west3
+  FUNCTION: eventtoinsta
+  STATE_BUCKET: eventtoinsta-state-eventtoinsta
+  SECRET_NAME: upload-post-api-key
+  RUNTIME_SA: eventtoinsta-runtime@eventtoinsta.iam.gserviceaccount.com
+  DEPLOYER_SA: eventtoinsta-deployer@eventtoinsta.iam.gserviceaccount.com
+  WIF_PROVIDER: projects/438337701991/locations/global/workloadIdentityPools/github/providers/github-eventtoinsta
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC-Token für Workload Identity Federation
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Tests
+        run: dotnet test EventToInsta.sln -c Release
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy
+        env:
+          UPLOAD_POST_USER: ${{ inputs.upload_post_user }}
+        run: |
+          gcloud functions deploy "$FUNCTION" --gen2 --runtime=dotnet8 --region="$REGION" --project="$PROJECT_ID" \
+            --source=EventToInsta --entry-point=EventToInsta.CloudFunction --trigger-http --no-allow-unauthenticated \
+            --memory=512Mi --timeout=1800s --service-account="$RUNTIME_SA" \
+            --set-env-vars="STATE_BUCKET=$STATE_BUCKET,UPLOAD_POST_USER=$UPLOAD_POST_USER" \
+            --set-secrets="UPLOAD_POST_API_KEY=$SECRET_NAME:latest" \
+            --quiet
