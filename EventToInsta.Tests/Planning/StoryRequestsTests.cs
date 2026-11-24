@@ -26,10 +26,10 @@ public class StoryRequestsTests
     [Fact]
     public void JugendPreview_FileName_HasPartAndShortAsciiHash()
     {
-        Assert.Matches(@"^jugend-preview-heim-2-[0-9a-f]{8}\.jpg$",
-            new JugendPreview(true, Day, WeekEnd, Games(1, 2), 2, 2).FileName);
-        Assert.Matches(@"^jugend-preview-auswaerts-1-[0-9a-f]{8}\.jpg$",
-            new JugendPreview(false, Day, WeekEnd, Games(3), 1, 1).FileName);
+        Assert.Matches(@"^jugend-preview-2-[0-9a-f]{8}\.jpg$",
+            new JugendPreview(Day, WeekEnd, Games(1, 2), 2, 2).FileName);
+        Assert.Matches(@"^jugend-preview-1-[0-9a-f]{8}\.jpg$",
+            new JugendPreview(Day, WeekEnd, Games(3), 1, 1).FileName);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class StoryRequestsTests
     public void JugendPreview_DifferentGamesSamePosition_DifferentFileName()
     {
         Assert.NotEqual(
-            new JugendPreview(true, Day, WeekEnd, Games(1, 2), 1, 1).FileName,
-            new JugendPreview(true, Day, WeekEnd, Games(1, 4), 1, 1).FileName);
+            new JugendPreview(Day, WeekEnd, Games(1, 2), 1, 1).FileName,
+            new JugendPreview(Day, WeekEnd, Games(1, 4), 1, 1).FileName);
     }
 }

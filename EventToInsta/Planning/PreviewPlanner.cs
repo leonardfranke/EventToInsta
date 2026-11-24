@@ -23,14 +23,11 @@ public static class PreviewPlanner
         plan.AddRange(herren.Where(g => g.IsHome).Select(g => new HerrenPreview(g)));
         plan.AddRange(herren.Where(g => !g.IsHome).Select(g => new HerrenPreview(g)));
 
+        // Jugend: Heim und Auswärts gemeinsam, nach Anpfiff sortiert („vs“ bzw. „@ … in Ort“ auf der Karte).
         var jugend = inWindow.Where(g => !g.IsHerren).ToList();
-        foreach (var home in new[] { true, false })
-        {
-            var group = jugend.Where(g => g.IsHome == home).ToList();
-            var parts = Chunker.SplitEvenly(group, maxCardsPerImage);
-            for (var i = 0; i < parts.Count; i++)
-                plan.Add(new JugendPreview(home, today, weekEnd, parts[i], i + 1, parts.Count));
-        }
+        var parts = Chunker.SplitEvenly(jugend, maxCardsPerImage);
+        for (var i = 0; i < parts.Count; i++)
+            plan.Add(new JugendPreview(today, weekEnd, parts[i], i + 1, parts.Count));
         return plan;
     }
 }

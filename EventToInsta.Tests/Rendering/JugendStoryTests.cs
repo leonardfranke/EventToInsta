@@ -69,9 +69,9 @@ public sealed class JugendStoryTests : IDisposable
         string[] ages = ["U10", "U12", "U14", "U16", "U18", "U12"];
         var games = ages.Select((a, i) => Jugend(i + 1, a, kickoff: new DateTime(2026, 11, 28, 10 + i, 0, 0))).ToList();
 
-        var story = await Renderer().RenderAsync(new JugendPreview(true, WeekStart, WeekEnd, games, 1, 2));
+        var story = await Renderer().RenderAsync(new JugendPreview(WeekStart, WeekEnd, games, 1, 2));
 
-        Assert.Matches(@"^jugend-preview-heim-1-[0-9a-f]{8}\.jpg$", story.FileName);
+        Assert.Matches(@"^jugend-preview-1-[0-9a-f]{8}\.jpg$", story.FileName);
         using var _ = Decode(story);
     }
 
@@ -81,7 +81,7 @@ public sealed class JugendStoryTests : IDisposable
         // Kein Images/Jugend und kein Images/Herren: Jugend-Stories brauchen kein Foto mehr.
         var games = new[] { Jugend(1, "U12") };
 
-        var story = await Renderer().RenderAsync(new JugendPreview(true, WeekStart, WeekEnd, games, 1, 1));
+        var story = await Renderer().RenderAsync(new JugendPreview(WeekStart, WeekEnd, games, 1, 1));
 
         using var _ = Decode(story);
     }
@@ -93,7 +93,7 @@ public sealed class JugendStoryTests : IDisposable
         WritePng("Jugend/a.png", 1200, 1600, SKColors.DarkGreen);
         WritePng("Jugend/b.png", 1200, 1600, SKColors.DarkRed);
         WritePng("Herren/c.png", 1600, 1200, SKColors.Yellow);
-        var request = new JugendPreview(true, WeekStart, WeekEnd, [Jugend(1, "U12"), Jugend(2, "U14")], 1, 1);
+        var request = new JugendPreview(WeekStart, WeekEnd, [Jugend(1, "U12"), Jugend(2, "U14")], 1, 1);
 
         var first = await Renderer().RenderAsync(request);
         var second = await Renderer().RenderAsync(request);
@@ -127,9 +127,9 @@ public sealed class JugendStoryTests : IDisposable
         Assert.Equal(60, name.Length);
         var games = new[] { Jugend(1, "U12", home: false, opponent: name, place: "Quakenbrück") };
 
-        var story = await Renderer().RenderAsync(new JugendPreview(false, WeekStart, WeekEnd, games, 1, 1));
+        var story = await Renderer().RenderAsync(new JugendPreview(WeekStart, WeekEnd, games, 1, 1));
 
-        Assert.Matches(@"^jugend-preview-auswaerts-1-[0-9a-f]{8}\.jpg$", story.FileName);
+        Assert.Matches(@"^jugend-preview-1-[0-9a-f]{8}\.jpg$", story.FileName);
         using var _ = Decode(story);
     }
 
@@ -290,7 +290,7 @@ public sealed class JugendStoryTests : IDisposable
     [InlineData(2026, 11, 23, 2026, 11, 29, 2, 3, "Diese Woche · 23.–29.11. (2/3)")]
     public void PreviewDateLine_FormatsWeekRange(int y1, int m1, int d1, int y2, int m2, int d2, int part, int count, string expected)
     {
-        var r = new JugendPreview(true, new DateOnly(y1, m1, d1), new DateOnly(y2, m2, d2), [], part, count);
+        var r = new JugendPreview(new DateOnly(y1, m1, d1), new DateOnly(y2, m2, d2), [], part, count);
 
         Assert.Equal(expected, JugendStory.PreviewDateLine(r));
     }

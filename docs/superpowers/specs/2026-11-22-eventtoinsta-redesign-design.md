@@ -18,7 +18,7 @@ Heute erzeugt das Tool nur Vorschaubilder für Heimspiele. Der Upload ist durch 
 
 - Vier Story-Typen in einem neuen, einheitlichen Design (siehe *Aussehen*)
   - Vorschau Herren: ein Bild pro Spiel, Heim- und Auswärtsspiele
-  - Vorschau Jugend: getrennt nach Heim- und Auswärtsspielen, bei vielen Spielen auf mehrere Bilder verteilt
+  - Vorschau Jugend: Heim und Auswärts gemeinsam, nach Anpfiff sortiert, bei vielen Spielen auf mehrere Bilder verteilt
   - Ergebnis Herren: ein Bild pro Spiel
   - Ergebnis Jugend: Heim und Auswärts gemeinsam, bei vielen Spielen auf mehrere Bilder verteilt
 - Vollautomatischer Betrieb als Google Cloud Function, ausgelöst durch Cloud Scheduler
@@ -76,11 +76,10 @@ Zur Wahl stand, wie die Bilder gezeichnet werden:
 - Cloud Scheduler startet sie **montags um 08:00 Europe/Berlin**, einmal und **ohne automatische Wiederholung**.
 - Zeitraum ist Montag (heute) bis Sonntag der laufenden Woche.
 - Ausgeschlossen werden Spiele mit `abgesagt == true` oder `verzicht == true`.
-- Die Spiele werden in vier Gruppen eingeteilt. Gruppen ohne Spiele entfallen.
+- Die Spiele werden in drei Gruppen eingeteilt. Gruppen ohne Spiele entfallen.
   - Herren Heim: eine Story pro Spiel
   - Herren Auswärts: eine Story pro Spiel
-  - Jugend Heim: eine Liste, sortiert nach Anpfiff, aufgeteilt auf mehrere Stories, wenn sie nicht auf eine passt
-  - Jugend Auswärts: wie Jugend Heim
+  - Jugend: Heim- und Auswärtsspiele in einer Liste, sortiert nach Anpfiff, aufgeteilt auf mehrere Stories, wenn sie nicht auf eine passt (geändert am 24.11.2026, vorher getrennt)
 - Alle Vorschau-Bilder der Woche gehen in **einem** Upload-Aufruf hoch, alles oder nichts. Danach wird die Kalenderwoche als gepostet vermerkt (`previewWeek`, ISO-Woche, z. B. `"2026-W48"`). Ist die aktuelle Woche dort schon vermerkt, postet ein erneuter Lauf nichts.
 - Schlägt ein Lauf fehl, muss man ihn von Hand neu anstoßen. Die Funktion antwortet dann mit HTTP 500, damit der Fehler im Log sichtbar ist. Dank `previewWeek` ist ein Neustart gefahrlos.
 
@@ -138,7 +137,7 @@ Es gibt (noch) nicht genug Herren-Fotos. Deshalb hat der Auftraggeber am 22.11.2
 - Der Hintergrund ist kein Foto, sondern eine rein grafische, im Code gezeichnete Fläche (Variante A „Spielfeld“ aus `jugend-hintergrund.html`, Entscheidung des Auftraggebers vom 22.11.2026): ein radialer Verlauf von `#1663C7` in der Mitte (Lichtkegel bei 50 % Breite, 38 % Höhe) nach `#062A5E` am Rand, darüber dezent (13 % Deckkraft) die weißen Linien eines Basketballfelds (Außenlinie, Mittellinie, Mittelkreis, Zonen, Freiwurfkreise und Dreierlinien). Eine Abdunklung gibt es nicht mehr; die weißen Karten haben einen leichten Schatten.
 - Kopfbereich, zentriert:
   - kleine Zeile „SV BAD LAER · JUGEND“
-  - groß „HEIMSPIELE“, „AUSWÄRTSSPIELE“ oder „ERGEBNISSE“
+  - groß „SPIELE“ (Vorschau) oder „ERGEBNISSE“
   - darunter der Zeitraum („Diese Woche · 23.–29.11.“) oder das Datum („Samstag, 28.11.“)
 - Darunter steht eine Liste weißer, abgerundeter Karten, eine pro Spiel:
   - links ein blaues Quadrat mit der Altersklasse („U12“)

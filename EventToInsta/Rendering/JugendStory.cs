@@ -58,7 +58,7 @@ public static class JugendStory
     {
         EnsureFits(r.Games.Count);
         CourtBackground.Draw(c, SKRect.Create(0, 0, Theme.Width, Theme.Height));
-        DrawHeader(c, r.Home ? "HEIMSPIELE" : "AUSWÄRTSSPIELE", PreviewDateLine(r));
+        DrawHeader(c, "SPIELE", PreviewDateLine(r));
 
         var layout = Layout(r.Games.Count);
         for (var i = 0; i < r.Games.Count; i++)

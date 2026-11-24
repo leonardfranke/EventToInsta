@@ -10,7 +10,7 @@ public class PreviewPlannerTests
     private static DateTime At(int day, int hour = 12) => new(2026, 11, day, hour, 0, 0);
 
     [Fact]
-    public void Preview_SplitsHerrenHomeAwayAndJugendGroups()
+    public void Preview_HerrenHomeThenAway_JugendHomeAndAwayTogetherByKickoff()
     {
         var games = new[]
         {
@@ -21,18 +21,15 @@ public class PreviewPlannerTests
             GameFactory.Make(1, At(20, 10), home: true),
         };
         var plan = PreviewPlanner.Plan(games, Today, 6);
-        Assert.Equal(4, plan.Count);
+        Assert.Equal(3, plan.Count);
         Assert.Equal("herren-preview-2.jpg", Assert.IsType<HerrenPreview>(plan[0]).FileName);
         Assert.Equal("herren-preview-3.jpg", Assert.IsType<HerrenPreview>(plan[1]).FileName);
-        var h = Assert.IsType<JugendPreview>(plan[2]);
-        Assert.True(h.Home);
-        Assert.Matches(@"^jugend-preview-heim-1-[0-9a-f]{8}\.jpg$", h.FileName);
-        Assert.Equal(new[] { 1, 4 }, h.Games.Select(g => g.MatchId).ToArray());
-        var a = Assert.IsType<JugendPreview>(plan[3]);
-        Assert.False(a.Home);
-        Assert.Matches(@"^jugend-preview-auswaerts-1-[0-9a-f]{8}\.jpg$", a.FileName);
-        Assert.Equal(Today, a.WeekStart);
-        Assert.Equal(new DateOnly(2026, 11, 22), a.WeekEnd);
+        var j = Assert.IsType<JugendPreview>(plan[2]);
+        Assert.Matches(@"^jugend-preview-1-[0-9a-f]{8}\.jpg$", j.FileName);
+        // Heim (1, 4) und Auswärts (5) in einer Liste, nach Anpfiff sortiert
+        Assert.Equal(new[] { 1, 4, 5 }, j.Games.Select(g => g.MatchId).ToArray());
+        Assert.Equal(Today, j.WeekStart);
+        Assert.Equal(new DateOnly(2026, 11, 22), j.WeekEnd);
     }
 
     [Fact]
@@ -61,19 +58,19 @@ public class PreviewPlannerTests
     public void Preview_EmptyGroupsProduceNoRequest()
     {
         var plan = PreviewPlanner.Plan(new[] { GameFactory.Make(1, At(20)) }, Today, 6);
-        var p = Assert.IsType<JugendPreview>(Assert.Single(plan));
-        Assert.True(p.Home);
+        Assert.IsType<JugendPreview>(Assert.Single(plan));
     }
 
     [Fact]
-    public void Preview_SevenJugendHome_TwoPartsFourAndThree()
+    public void Preview_SevenJugendHomeAndAway_TwoPartsFourAndThree()
     {
-        var games = Enumerable.Range(1, 7).Select(i => GameFactory.Make(i, At(20, 8 + i))).ToArray();
+        var games = Enumerable.Range(1, 7).Select(i => GameFactory.Make(i, At(20, 8 + i), home: i % 2 == 0)).ToArray();
         var plan = PreviewPlanner.Plan(games, Today, 6).Cast<JugendPreview>().ToArray();
         Assert.Equal(2, plan.Length);
         Assert.Equal(new[] { 4, 3 }, plan.Select(p => p.Games.Count).ToArray());
         Assert.Equal(new[] { 1, 2 }, plan.Select(p => p.Part).ToArray());
         Assert.All(plan, p => Assert.Equal(2, p.PartCount));
-        Assert.Matches(@"^jugend-preview-heim-2-[0-9a-f]{8}\.jpg$", plan[1].FileName);
+        Assert.Equal(new[] { 1, 2, 3, 4 }, plan[0].Games.Select(g => g.MatchId).ToArray());
+        Assert.Matches(@"^jugend-preview-2-[0-9a-f]{8}\.jpg$", plan[1].FileName);
     }
 }

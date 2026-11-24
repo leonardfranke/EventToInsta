@@ -22,13 +22,12 @@ public record HerrenPreview(Game Game)
     : StoryRequest($"herren-preview-{Game.MatchId}.jpg");
 
 public record JugendPreview(
-    bool Home,
     DateOnly WeekStart,
     DateOnly WeekEnd,
     IReadOnlyList<Game> Games,
     int Part,
     int PartCount)
-    : StoryRequest($"jugend-preview-{(Home ? "heim" : "auswaerts")}-{Part}-{PartHash(Games, PartCount)}.jpg");
+    : StoryRequest($"jugend-preview-{Part}-{PartHash(Games, PartCount)}.jpg");
 
 public record HerrenResult(Game Game)
     : StoryRequest($"herren-result-{Game.MatchId}.jpg");
