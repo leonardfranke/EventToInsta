@@ -4,14 +4,12 @@ namespace EventToInsta;
 
 public record AppConfig(
     int ClubId,
-    string HomePlace,
     string? UploadPostApiKey,
     string UploadPostUser,
     string? StateBucket,
     IReadOnlyDictionary<string, string> Sponsors)
 {
     public const int DefaultClubId = 621;
-    public const string DefaultHomePlace = "Bad Laer";
     public const string DefaultUploadPostUser = "Dachse";
     public const string DefaultSponsors = "U12=Böhnke.png;U14=Mann.png;U16=Stockmeyer.webp;U18=Mittelstedt.png";
 
@@ -27,7 +25,6 @@ public record AppConfig(
 
         return new AppConfig(
             clubId,
-            Get("HOME_PLACE") ?? DefaultHomePlace,
             Get("UPLOAD_POST_API_KEY"),
             Get("UPLOAD_POST_USER") ?? DefaultUploadPostUser,
             Get("STATE_BUCKET"),

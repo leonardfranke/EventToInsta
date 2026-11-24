@@ -11,7 +11,6 @@ public class AppConfigTests
         var cfg = AppConfig.FromEnvironment(Env());
 
         Assert.Equal(621, cfg.ClubId);
-        Assert.Equal("Bad Laer", cfg.HomePlace);
         Assert.Null(cfg.UploadPostApiKey);
         Assert.Equal("Dachse", cfg.UploadPostUser);
         Assert.Null(cfg.StateBucket);
@@ -26,11 +25,10 @@ public class AppConfigTests
     public void FromEnvironment_ReadsAllVariables()
     {
         var cfg = AppConfig.FromEnvironment(Env(
-            ("CLUB_ID", "42"), ("HOME_PLACE", "Glandorf"), ("UPLOAD_POST_API_KEY", "secret"),
+            ("CLUB_ID", "42"), ("UPLOAD_POST_API_KEY", "secret"),
             ("UPLOAD_POST_USER", "Andere"), ("STATE_BUCKET", "bucket")));
 
         Assert.Equal(42, cfg.ClubId);
-        Assert.Equal("Glandorf", cfg.HomePlace);
         Assert.Equal("secret", cfg.UploadPostApiKey);
         Assert.Equal("Andere", cfg.UploadPostUser);
         Assert.Equal("bucket", cfg.StateBucket);

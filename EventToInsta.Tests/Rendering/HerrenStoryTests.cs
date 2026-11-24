@@ -96,7 +96,7 @@ public sealed class HerrenStoryTests : IDisposable
     }
 
     private StoryRenderer Renderer(ILogoSource logos) =>
-        new(new AssetStore(_dir, new Dictionary<string, string>()), logos, "Bad Laer");
+        new(new AssetStore(_dir, new Dictionary<string, string>()), logos);
 
     private static Game Herren(bool home = true, string opponent = "SC Melle II", Score? result = null, string? place = null)
     {

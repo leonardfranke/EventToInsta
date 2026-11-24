@@ -54,7 +54,7 @@ public static class JugendStory
 
     internal sealed record ListLayout(float HeaderBottom, float FooterTop, IReadOnlyList<SKRect> Cards);
 
-    public static void DrawPreview(SKCanvas c, JugendPreview r, Func<string, SKBitmap?> sponsorFor, string homePlace)
+    public static void DrawPreview(SKCanvas c, JugendPreview r, Func<string, SKBitmap?> sponsorFor)
     {
         EnsureFits(r.Games.Count);
         CourtBackground.Draw(c, SKRect.Create(0, 0, Theme.Width, Theme.Height));
@@ -65,7 +65,7 @@ public static class JugendStory
         {
             var g = r.Games[i];
             using var sponsor = sponsorFor(g.AgeClass);
-            DrawPreviewCard(c, layout.Cards[i], g, PreviewInfoLine(g, homePlace), sponsor);
+            DrawPreviewCard(c, layout.Cards[i], g, PreviewInfoLine(g), sponsor);
         }
 
         DrawFooter(c, "KOMMT VORBEI & FEUERT UNS AN!");
@@ -92,14 +92,9 @@ public static class JugendStory
         DrawFooter(c, "STARK GESPIELT, TEAMS!");
     }
 
-    internal static string PreviewInfoLine(Game g, string homePlace)
-    {
-        var line = $"{g.Kickoff.ToString("ddd", Theme.German)} {g.Kickoff.ToString("dd.MM.", Theme.German)} · {g.Kickoff:HH:mm} Uhr";
-        if (!string.IsNullOrWhiteSpace(g.Place)
-            && !string.Equals(g.Place.Trim(), homePlace.Trim(), StringComparison.OrdinalIgnoreCase))
-            line += $" · in {g.Place.Trim()}";
-        return line;
-    }
+    /// <summary>Nur Tag und Uhrzeit; ob auswärts, zeigt schon „@“ vor dem Gegner.</summary>
+    internal static string PreviewInfoLine(Game g) =>
+        $"{g.Kickoff.ToString("ddd", Theme.German)} {g.Kickoff.ToString("dd.MM.", Theme.German)} · {g.Kickoff:HH:mm} Uhr";
 
     internal static string PreviewDateLine(JugendPreview r)
     {

@@ -7,7 +7,7 @@ namespace EventToInsta.Rendering;
 
 public record RenderedStory(string FileName, byte[] Jpeg);
 
-public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string homePlace) : IStoryRenderer
+public sealed class StoryRenderer(AssetStore assets, ILogoSource logos) : IStoryRenderer
 {
     public async Task<RenderedStory> RenderAsync(StoryRequest request, CancellationToken ct = default)
     {
@@ -26,7 +26,7 @@ public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string h
                 return Render(request, c => HerrenStory.DrawResult(c, r, club, opponentLogo));
             }
             case JugendPreview jp:
-                return Render(request, c => JugendStory.DrawPreview(c, jp, assets.SponsorLogo, homePlace));
+                return Render(request, c => JugendStory.DrawPreview(c, jp, assets.SponsorLogo));
             case JugendResult jr:
                 // Sponsoren vorerst nur in der Vorschau (Entscheidung 24.11.2026); DrawResult kann sie weiterhin zeichnen.
                 return Render(request, c => JugendStory.DrawResult(c, jr, _ => null));

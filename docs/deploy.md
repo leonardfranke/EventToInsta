@@ -50,7 +50,7 @@ gcloud services enable cloudfunctions.googleapis.com run.googleapis.com cloudbui
 | `STATE_BUCKET`        | `<BUCKET>`                            | Pflicht. Fehlt er, antwortet die Function mit 500.         |
 | `UPLOAD_POST_USER`    | `Dachse`                              | Profil bei upload-post.com. Für Tests ein Test-Profil.     |
 | `UPLOAD_POST_API_KEY` | aus Secret Manager (`<SECRET_NAME>`)  | Nie als Klartext in `--set-env-vars`.                      |
-| `CLUB_ID`, `HOME_PLACE`, `SPONSORS` | nicht gesetzt            | Defaults: `621`, „Bad Laer“, `U12=Böhnke.png;U14=Mann.png;U16=Stockmeyer.webp;U18=Mittelstedt.png` |
+| `CLUB_ID`, `SPONSORS` | nicht gesetzt                          | Defaults: `621`, `U12=Böhnke.png;U14=Mann.png;U16=Stockmeyer.webp;U18=Mittelstedt.png` |
 
 > **Umbenennung:** Die alte Umgebungsvariable `upload_posts_api_key` ersetzt jetzt `UPLOAD_POST_API_KEY`.
 > Eine bestehende Function oder ein bestehendes Secret-Mapping mit dem alten Namen wird nicht mehr gelesen.

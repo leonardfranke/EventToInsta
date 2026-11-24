@@ -39,7 +39,7 @@ public sealed class JugendStoryTests : IDisposable
 
     private StoryRenderer Renderer() =>
         new(new AssetStore(_dir, new Dictionary<string, string> { ["U12"] = "sponsor.png", ["U14"] = "sponsor.png" }),
-            new NoLogos(), "Bad Laer");
+            new NoLogos());
 
     /// <summary>Ergebnis direkt mit Sponsor zeichnen (der StoryRenderer übergibt bei Ergebnissen vorerst keinen).</summary>
     private RenderedStory RenderResultWithSponsors(JugendResult r)
@@ -294,16 +294,14 @@ public sealed class JugendStoryTests : IDisposable
     }
 
     [Fact]
-    public void Preview_AwayPlaceEqualsHomePlace_NoPlaceSuffix()
+    public void PreviewInfoLine_NeverContainsPlace()
     {
         var kickoff = new DateTime(2026, 11, 28, 10, 0, 0);
 
         Assert.Equal("Sa 28.11. · 10:00 Uhr",
-            JugendStory.PreviewInfoLine(Jugend(1, "U12", home: false, place: "bad laer", kickoff: kickoff), "Bad Laer"));
+            JugendStory.PreviewInfoLine(Jugend(1, "U12", home: false, place: "Dissen", kickoff: kickoff)));
         Assert.Equal("Sa 28.11. · 10:00 Uhr",
-            JugendStory.PreviewInfoLine(Jugend(1, "U12", home: true, place: null, kickoff: kickoff), "Bad Laer"));
-        Assert.Equal("Sa 28.11. · 10:00 Uhr · in Dissen",
-            JugendStory.PreviewInfoLine(Jugend(1, "U12", home: false, place: "Dissen", kickoff: kickoff), "Bad Laer"));
+            JugendStory.PreviewInfoLine(Jugend(1, "U12", home: true, place: "Glandorf", kickoff: kickoff)));
     }
 
     [Theory]
