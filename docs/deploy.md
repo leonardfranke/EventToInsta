@@ -110,7 +110,9 @@ Die Anmeldung läuft schlüssellos über Workload Identity Federation (Pool `git
 `github-eventtoinsta`, nur für das Repo `leonardfranke/EventToInsta`). Dabei übernimmt der Workflow den
 Service-Account `eventtoinsta-deployer`. Dessen Rechte: `roles/cloudfunctions.developer` im Projekt und
 `roles/iam.serviceAccountUser` auf `eventtoinsta-runtime` und auf dem Compute-Standardkonto (Build) sowie
-`roles/secretmanager.secretVersionAdder` und `roles/secretmanager.secretAccessor` auf dem Secret. Das
+`roles/secretmanager.secretVersionAdder` und `roles/secretmanager.secretAccessor` auf dem Secret sowie
+`roles/run.admin` nur auf dem Cloud-Run-Dienst `eventtoinsta` (beim Update setzt `gcloud` wegen
+`--no-allow-unauthenticated` die IAM-Policy des Dienstes, sonst 403 `run.services.setIamPolicy`). Das
 Compute-Standardkonto hat `roles/cloudbuild.builds.builder`.
 
 ## 4. Bucket-Rechte für die Function
