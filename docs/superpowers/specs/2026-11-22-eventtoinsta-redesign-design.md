@@ -119,18 +119,23 @@ Die Entwürfe liegen unter `.superpowers/brainstorm/…/content/`: `herren-b-v3.
 
 ### Herren (Stil „Matchday“): Vorschau und Ergebnis
 
-- Das Foto liegt oben auf etwa 55 % der Höhe und endet mit einem Schrägschnitt, der nach rechts ansteigt. Entlang der Schräge verläuft eine weiße Kante, darunter eine dünne hellblaue Linie. Unterhalb ist die Fläche vollflächig Vereinsblau.
-- Oben links auf dem Foto sitzt ein blaues Etikett mit weißer Schrift:
+Es gibt (noch) nicht genug Herren-Fotos. Deshalb hat der Auftraggeber am 22.11.2026 die Variante B „Duell im Fokus“ aus `herren-platzhalter.html` gewählt: Statt eines Fotos zeigt der obere Bereich den Spielfeld-Hintergrund mit beiden Logos.
+
+- Der obere Bereich reicht bis etwa 55 % der Höhe und endet mit einem Schrägschnitt, der nach rechts ansteigt. Entlang der Schräge verläuft eine weiße Kante, darunter eine dünne hellblaue Linie. Unterhalb ist die Fläche vollflächig Vereinsblau.
+- Im oberen Bereich liegt der Spielfeld-Hintergrund der Jugend-Stories (Verlauf und Feldlinien, siehe unten), auf die Schräge zugeschnitten. Darauf stehen sich **beide Logos groß gegenüber: links die Heimmannschaft, rechts der Gast**, jeweils auf einem weißen Kreis (Entwurf: Mitte bei y = 150, Radius 47,5 von 300 × 533). Bad Laer zeigt das Vereinslogo. Hat der Gegner kein Logo, steht ersatzweise sein `teamnameSmall` im weißen Kreis (erst verkleinert, dann mit „…“ gekürzt). Zwischen den Logos steht ein weißes „VS“.
+- Oben links sitzt ein Etikett, **immer weiß hinterlegt mit blauer Schrift**, damit es sich vom Spielfeld abhebt:
   - in der Vorschau „HEIMSPIEL“ oder „AUSWÄRTSSPIEL“
-  - im Ergebnis „ENDSTAND“, bei einem Sieg weiß hinterlegt mit blauer Schrift
-- **Vorschau:** Unter der Schräge steht groß „GAME DAY“, zweizeilig. Der Text bleibt englisch, so hat es der Auftraggeber entschieden. Darunter folgt die Zeile „SAMSTAG, 28.11. · 19:30 UHR“, bei Auswärtsspielen ergänzt um „· {Ort}“.
+  - im Ergebnis „ENDSTAND“
+- **Vorschau:** Unter der Schräge steht groß „GAME DAY“, zweizeilig. Der Text bleibt englisch, so hat es der Auftraggeber entschieden. Darunter folgt die Zeile „SAMSTAG, 28.11. · 19:30 UHR“, für Heim- und Auswärtsspiele gleich; der Ort steht nur in der Fußzeile.
 - **Ergebnis:** An der Stelle von „GAME DAY“ steht groß der Spielstand im Format Heim : Gast. Die Punkte der unterlegenen Mannschaft sind abgeschwächt. Bei einem Sieg von Bad Laer steht darunter „SIEG!“, bei einer Niederlage gibt es keine Wertungszeile. Danach folgt die Zeile mit Datum und Spielklasse.
-- **Fußzeile:** Über eine feine Trennlinie stehen **links die Heimmannschaft und rechts der Gast**, jeweils mit Logo, dazwischen der Text „{HEIM} VS {GAST}“. Bad Laer erscheint als „HERREN“. Hat der Gegner kein Logo, wird ersatzweise sein `teamnameSmall` in einem weißen Kreis angezeigt.
-- Das Hintergrundfoto wird zufällig aus `Images/Herren/` gewählt.
+- **Fußzeile:** Unter einer feinen Trennlinie steht nur Text, ohne Logos (die stehen oben), zentriert in zwei Zeilen:
+  - groß „{HEIM} VS {GAST}“; Bad Laer erscheint als „HERREN“. Ist die Zeile zu lang, wird sie erst verkleinert und dann nur der Gegnername mit „…“ gekürzt, sodass „VS HERREN“ bzw. „HERREN VS“ lesbar bleibt.
+  - darunter klein in Hellblau: in der Vorschau „{Halle} · {SPIELKLASSE}“, wobei die Halle bei Heimspielen „SPORTHALLE BAD LAER“ ist und bei Auswärtsspielen der Ort (fehlt der Ort, entfällt dieser Teil); im Ergebnis nur „{SPIELKLASSE}“.
+- Herren-Stories verwenden keine Fotos mehr; jede Story sieht bei gleichen Daten gleich aus (kein Zufall). Die Fotos in `Images/Herren/` bleiben im Projekt, falls später wieder auf Fotos umgestellt wird.
 
 ### Jugend (Stil „Infokarte“): Vorschau und Ergebnis
 
-- Das Foto füllt das ganze Bild, darüber liegt eine dunkelblaue Abdunklung (etwa 75 %).
+- Der Hintergrund ist kein Foto, sondern eine rein grafische, im Code gezeichnete Fläche (Variante A „Spielfeld“ aus `jugend-hintergrund.html`, Entscheidung des Auftraggebers vom 22.11.2026): ein radialer Verlauf von `#1663C7` in der Mitte (Lichtkegel bei 50 % Breite, 38 % Höhe) nach `#062A5E` am Rand, darüber dezent (13 % Deckkraft) die weißen Linien eines Basketballfelds (Außenlinie, Mittellinie, Mittelkreis, Zonen, Freiwurfkreise und Dreierlinien). Eine Abdunklung gibt es nicht mehr; die weißen Karten haben einen leichten Schatten.
 - Kopfbereich, zentriert:
   - kleine Zeile „SV BAD LAER · JUGEND“
   - groß „HEIMSPIELE“, „AUSWÄRTSSPIELE“ oder „ERGEBNISSE“
@@ -142,14 +147,14 @@ Die Entwürfe liegen unter `.superpowers/brainstorm/…/content/`: `herren-b-v3.
   - Im **Ergebnis** lautet die Infozeile „Heim“ oder „Auswärts“. Rechts steht der Spielstand **aus Sicht von Bad Laer**, also mit den eigenen Punkten vorn, und darunter „SIEG“ oder „NIEDERLAGE“. Siege haben einen blauen linken Rand, Niederlagen einen grauen und abgeschwächten Spielstand. Hat die Altersklasse einen Sponsor, steht unter „Heim“/„Auswärts“ eine kleine, dezente Zeile „unterstützt von [Logo]“ (kleine graue Schrift, Logo etwa 1,6-mal so hoch wie die Schriftgröße, linksbündig mit dem Gegnernamen); Gegnername und Spielstand behalten ihre volle Breite (Variante B aus `sponsor-results.html`, Entscheidung des Auftraggebers vom 22.11.2026).
 - Die Fußzeile ist ein kurzer Slogan: in der Vorschau „KOMMT VORBEI & FEUERT UNS AN!“, im Ergebnis „STARK GESPIELT, TEAMS!“.
 - **Aufteilung:** Passt die Liste nicht auf ein Bild (Richtwert etwa 6 Karten), wird sie auf mehrere Bilder verteilt, und zwar gleichmäßig, also 7 Spiele als 4 + 3 und nicht als 6 + 1. Die Reihenfolge bleibt chronologisch.
-- Das Hintergrundfoto wird zufällig aus `Images/Jugend/` gewählt. Ist der Ordner leer oder fehlt er, wird `Images/Herren/` verwendet.
+- Der Spielfeld-Hintergrund ist bei jeder Jugend-Story gleich (kein Zufall); `Images/Jugend/` wird nicht mehr verwendet.
 
 ### Gemeinsam für beide Stile
 
 - Schriften: Anton für Überschriften, Zahlen und Namen, Inter für kleine Info-Zeilen. Beide werden **als TTF-Dateien ins Projekt aufgenommen** und explizit geladen, statt sich auf installierte Systemschriften zu verlassen.
 - Datums- und Wochentagsangaben sind deutsch (Kultur `de-DE`).
 - Gegnernamen werden bereinigt: „(ak)“ wird entfernt (ohne Rücksicht auf Groß- und Kleinschreibung) und Leerzeichen gekürzt (bisherige Logik).
-- Die Ausgabe ist JPEG in hoher Qualität. Das Foto wird auf 1080 × 1920 zugeschnitten und skaliert (cover), unabhängig von seiner Originalgröße.
+- Die Ausgabe ist JPEG in hoher Qualität im Format 1080 × 1920. Beide Stile verwenden den im Code gezeichneten Spielfeld-Hintergrund, keine Fotos.
 
 ## Codeaufbau (Rahmen)
 

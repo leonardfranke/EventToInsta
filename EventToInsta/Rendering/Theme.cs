@@ -11,8 +11,7 @@ public static class Theme
     public static readonly SKColor PaleBlue = SKColor.Parse("#A9CBF7");
     public static readonly SKColor Grey = SKColor.Parse("#B8C4D6");
 
-    // Jugend-Infokarte: Abdunklung über dem Foto und neutrale Grautöne auf den weißen Karten.
-    public static readonly SKColor Shade = new(7, 40, 90, 191);
+    // Jugend-Infokarte: neutrale Grautöne auf den weißen Karten.
     public static readonly SKColor MutedText = SKColor.Parse("#555555");
     public static readonly SKColor FaintText = SKColor.Parse("#888888");
     public static readonly SKColor LossText = SKColor.Parse("#8090A8");

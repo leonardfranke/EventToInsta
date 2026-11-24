@@ -77,7 +77,7 @@ public static class CompositionRoot
                 publisher = new UploadPostPublisher(uploadHttp, cfg.UploadPostApiKey!, cfg.UploadPostUser);
             }
 
-            var renderer = new StoryRenderer(new AssetStore(imagesDirectory, cfg.Sponsors, new Random(), log), logos, cfg.HomePlace);
+            var renderer = new StoryRenderer(new AssetStore(imagesDirectory, cfg.Sponsors, log), logos, cfg.HomePlace);
 
             if (opt.Job == RunOptions.PreviewJob)
                 await new PreviewJob(games, renderer, publisher, state, clock, JugendStory.MaxCards, log).RunAsync(ct);

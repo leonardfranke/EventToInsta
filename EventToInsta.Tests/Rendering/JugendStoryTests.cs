@@ -14,7 +14,6 @@ public sealed class JugendStoryTests : IDisposable
     public JugendStoryTests()
     {
         Fonts.Register(TextFitTests.FontsDirectory);
-        WritePng("Jugend/photo.png", 1200, 1600, SKColors.DarkSlateGray);
         WritePng("Logos/Dachse.png", 200, 200, SKColors.Orange);
         WritePng("Sponsoren/sponsor.png", 300, 120, SKColors.Red);
     }
@@ -39,8 +38,8 @@ public sealed class JugendStoryTests : IDisposable
     }
 
     private StoryRenderer Renderer() =>
-        new(new AssetStore(_dir, new Dictionary<string, string> { ["U12"] = "sponsor.png", ["U14"] = "sponsor.png" },
-            new Random(1)), new NoLogos(), "Bad Laer");
+        new(new AssetStore(_dir, new Dictionary<string, string> { ["U12"] = "sponsor.png", ["U14"] = "sponsor.png" }),
+            new NoLogos(), "Bad Laer");
 
     private static Game Jugend(
         int id, string age, bool home = true, string opponent = "SC Melle II", Score? result = null,
@@ -74,6 +73,51 @@ public sealed class JugendStoryTests : IDisposable
 
         Assert.Matches(@"^jugend-preview-heim-1-[0-9a-f]{8}\.jpg$", story.FileName);
         using var _ = Decode(story);
+    }
+
+    [Fact]
+    public async Task Preview_WithoutAnyPhotos_RendersCourtBackground()
+    {
+        // Kein Images/Jugend und kein Images/Herren: Jugend-Stories brauchen kein Foto mehr.
+        var games = new[] { Jugend(1, "U12") };
+
+        var story = await Renderer().RenderAsync(new JugendPreview(true, WeekStart, WeekEnd, games, 1, 1));
+
+        using var _ = Decode(story);
+    }
+
+    [Fact]
+    public async Task Preview_IgnoresPhotoFolders_RendersSamePixelsEveryTime()
+    {
+        // Früher zufälliges Foto; jetzt gleiches Bild unabhängig von vorhandenen Fotos und Zufall.
+        WritePng("Jugend/a.png", 1200, 1600, SKColors.DarkGreen);
+        WritePng("Jugend/b.png", 1200, 1600, SKColors.DarkRed);
+        WritePng("Herren/c.png", 1600, 1200, SKColors.Yellow);
+        var request = new JugendPreview(true, WeekStart, WeekEnd, [Jugend(1, "U12"), Jugend(2, "U14")], 1, 1);
+
+        var first = await Renderer().RenderAsync(request);
+        var second = await Renderer().RenderAsync(request);
+
+        Assert.Equal(first.Jpeg, second.Jpeg);
+    }
+
+    [Fact]
+    public async Task Result_TwoCards_HalfCourtLineVisibleBelowCards()
+    {
+        var games = new[]
+        {
+            Jugend(1, "U12", home: true, result: new Score(54, 38)),
+            Jugend(2, "U16", home: false, result: new Score(47, 41)),
+        };
+
+        var story = await Renderer().RenderAsync(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
+
+        using var bmp = Decode(story);
+        var layout = JugendStory.Layout(2);
+        Assert.True(layout.Cards[^1].Bottom < 940, "Prüfpunkt liegt unter einer Karte");
+        var line = bmp.GetPixel(300, 958);
+        var beside = bmp.GetPixel(300, 985);
+        Assert.True(line.Red > beside.Red + 15 && line.Green > beside.Green + 15, $"Linie {line}, daneben {beside}");
     }
 
     [Fact]

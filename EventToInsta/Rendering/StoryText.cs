@@ -30,13 +30,19 @@ internal static class StoryText
     /// <summary>Verkleinert die Schrift bis <paramref name="minScale"/>, erst danach kürzt TextFit mit „…“.</summary>
     public static TextBlock Fit(string text, Style style, float maxWidth, float minScale, bool centered = false)
     {
-        // Breite wächst linear mit Schriftgröße und Laufweite, also reicht eine Messung ohne Begrenzung.
-        var natural = NaturalWidth(text, style);
-        var scale = natural > maxWidth ? Math.Max(minScale, maxWidth / natural * 0.99f) : 1f;
+        var scale = FitScale(text, style, maxWidth, minScale);
         var s = With(style, style.TextColor);
         s.FontSize = style.FontSize * scale;
         s.LetterSpacing = style.LetterSpacing * scale;
         return centered ? TextFit.Centered(text, s, maxWidth) : TextFit.Line(text, s, maxWidth);
+    }
+
+    /// <summary>Faktor, mit dem <see cref="Fit"/> Schriftgröße und Laufweite verkleinert.</summary>
+    public static float FitScale(string text, Style style, float maxWidth, float minScale)
+    {
+        // Breite wächst linear mit Schriftgröße und Laufweite, also reicht eine Messung ohne Begrenzung.
+        var natural = NaturalWidth(text, style);
+        return natural > maxWidth ? Math.Max(minScale, maxWidth / natural * 0.99f) : 1f;
     }
 
     /// <summary>Breite der Zeile ohne Begrenzung (inklusive Laufweite hinter dem letzten Zeichen).</summary>
