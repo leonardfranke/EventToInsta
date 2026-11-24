@@ -28,7 +28,8 @@ public sealed class StoryRenderer(AssetStore assets, ILogoSource logos, string h
             case JugendPreview jp:
                 return Render(request, c => JugendStory.DrawPreview(c, jp, assets.SponsorLogo, homePlace));
             case JugendResult jr:
-                return Render(request, c => JugendStory.DrawResult(c, jr, assets.SponsorLogo));
+                // Sponsoren vorerst nur in der Vorschau (Entscheidung 24.11.2026); DrawResult kann sie weiterhin zeichnen.
+                return Render(request, c => JugendStory.DrawResult(c, jr, _ => null));
             default:
                 throw new NotSupportedException($"Unbekannte Story: {request.GetType().Name}");
         }

@@ -41,6 +41,17 @@ public sealed class JugendStoryTests : IDisposable
         new(new AssetStore(_dir, new Dictionary<string, string> { ["U12"] = "sponsor.png", ["U14"] = "sponsor.png" }),
             new NoLogos(), "Bad Laer");
 
+    /// <summary>Ergebnis direkt mit Sponsor zeichnen (der StoryRenderer übergibt bei Ergebnissen vorerst keinen).</summary>
+    private RenderedStory RenderResultWithSponsors(JugendResult r)
+    {
+        var assets = new AssetStore(_dir, new Dictionary<string, string> { ["U12"] = "sponsor.png", ["U14"] = "sponsor.png" });
+        using var bmp = new SKBitmap(1080, 1920);
+        using (var c = new SKCanvas(bmp)) JugendStory.DrawResult(c, r, assets.SponsorLogo);
+        using var image = SKImage.FromBitmap(bmp);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        return new RenderedStory(r.FileName, data.ToArray());
+    }
+
     private static Game Jugend(
         int id, string age, bool home = true, string opponent = "SC Melle II", Score? result = null,
         string? place = null, DateTime? kickoff = null)
@@ -182,7 +193,18 @@ public sealed class JugendStoryTests : IDisposable
     }
 
     [Fact]
-    public async Task Result_WithSponsor_DrawsSponsorLogoOnlyForSponsoredAgeClass()
+    public async Task Result_ViaRenderer_ShowsNoSponsorLogo()
+    {
+        var games = new[] { Jugend(1, "U12", home: true, result: new Score(54, 38)) }; // U12 hat einen Sponsor
+
+        var story = await Renderer().RenderAsync(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
+
+        using var bmp = Decode(story);
+        Assert.Equal(0, CountRed(bmp, JugendStory.Layout(1).Cards[0]));
+    }
+
+    [Fact]
+    public void Result_WithSponsor_DrawsSponsorLogoOnlyForSponsoredAgeClass()
     {
         var games = new[]
         {
@@ -190,7 +212,7 @@ public sealed class JugendStoryTests : IDisposable
             Jugend(2, "U16", home: false, result: new Score(47, 41)),  // kein Sponsor
         };
 
-        var story = await Renderer().RenderAsync(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
+        var story = RenderResultWithSponsors(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
 
         using var bmp = Decode(story);
         var cards = JugendStory.Layout(2).Cards;
@@ -199,7 +221,7 @@ public sealed class JugendStoryTests : IDisposable
     }
 
     [Fact]
-    public async Task Result_SixSponsoredCardsLongNamesThreeDigitScores_DoesNotThrow()
+    public void Result_SixSponsoredCardsLongNamesThreeDigitScores_DoesNotThrow()
     {
         var name = "Turn- und Sportverein Bad Rothenfelde von 1898 e.V. Basketball";
         var games = Enumerable.Range(1, JugendStory.MaxCards)
@@ -207,7 +229,7 @@ public sealed class JugendStoryTests : IDisposable
                 result: i % 3 == 0 ? new Score(100, 101) : new Score(101, 100)))
             .ToList();
 
-        var story = await Renderer().RenderAsync(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
+        var story = RenderResultWithSponsors(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
 
         using var bmp = Decode(story);
         var layout = JugendStory.Layout(games.Count);
@@ -220,11 +242,11 @@ public sealed class JugendStoryTests : IDisposable
     }
 
     [Fact]
-    public async Task Result_WithSponsor_DrawsLogoInMiddleBlockBelowInfoLine()
+    public void Result_WithSponsor_DrawsLogoInMiddleBlockBelowInfoLine()
     {
         var games = new[] { Jugend(1, "U12", home: true, result: new Score(54, 38)) };
 
-        var story = await Renderer().RenderAsync(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
+        var story = RenderResultWithSponsors(new JugendResult(new DateOnly(2026, 11, 28), games, 1, 1));
 
         using var bmp = Decode(story);
         var card = JugendStory.Layout(1).Cards[0];

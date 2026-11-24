@@ -38,8 +38,8 @@ public static class JugendStory
     private const float LineGap = 18;
 
     // Sponsor
-    private const float SponsorLogoWidth = 46 * S;
-    private const float SponsorLogoHeight = 22 * S;
+    private const float SponsorLogoWidth = 58 * S;
+    private const float SponsorLogoHeight = 28 * S;
     private const float SponsorLabelGap = 12;
 
     // Ergebniskarte mit Sponsor (Entwurf B in sponsor-results.html): kleine Zeile „unterstützt von [Logo]“
