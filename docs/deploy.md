@@ -1,6 +1,6 @@
 # Bereitstellung: Cloud Function und Cloud Scheduler
 
-EventToInsta läuft als Google Cloud Function (2. Generation, Runtime `dotnet8`) in der Region
+EventToInsta läuft als Google Cloud Function (2. Generation, Runtime `dotnet10`) in der Region
 `europe-west3`. Cloud Scheduler ruft die Function per HTTP auf, `?job=preview` oder `?job=results`.
 Der Zustand (`posted.json`) liegt in einem Cloud-Storage-Bucket.
 
@@ -83,7 +83,7 @@ Wegen `:latest` greift er beim nächsten Kaltstart, sofort mit einem erneuten De
 ## 3. Function deployen
 
 ```sh
-gcloud functions deploy eventtoinsta --gen2 --runtime=dotnet8 --region=europe-west3 \
+gcloud functions deploy eventtoinsta --gen2 --runtime=dotnet10 --region=europe-west3 \
   --source=EventToInsta --entry-point=EventToInsta.CloudFunction --trigger-http --no-allow-unauthenticated \
   --memory=512Mi --timeout=1800s --service-account=<RUNTIME_SA> \
   --set-env-vars=STATE_BUCKET=<BUCKET>,UPLOAD_POST_USER=Dachse \
@@ -223,7 +223,7 @@ Code-Änderung und vor dem Aktivieren der Jobs umzusetzen.
 ## Smoke-Check nach dem ersten Lauf (Linux, Zeitzone, ICU)
 
 Die Function rechnet in der Zeitzone `Europe/Berlin` und formatiert Texte mit der Kultur `de-DE`.
-Beides braucht unter Linux die Zeitzonendaten (tzdata) und ICU. Das Laufzeit-Image von `dotnet8`
+Beides braucht unter Linux die Zeitzonendaten (tzdata) und ICU. Das Laufzeit-Image von `dotnet10`
 bringt beides mit; geprüft wird es trotzdem einmal in den Logs eines manuellen Laufs:
 
 - **Erfolg:** Zeilen wie `Veröffentlicht: preview-2026-W48` oder `Keine Spiele für die Vorschau, nichts zu posten.`,

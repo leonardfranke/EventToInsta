@@ -35,7 +35,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - name: Tests
         run: dotnet test EventToInsta.sln -c Release
@@ -69,7 +69,7 @@ jobs:
         env:
           UPLOAD_POST_USER: ${{ inputs.upload_post_user }}
         run: |
-          gcloud functions deploy "$FUNCTION" --gen2 --runtime=dotnet8 --region="$REGION" --project="$PROJECT_ID" \
+          gcloud functions deploy "$FUNCTION" --gen2 --runtime=dotnet10 --region="$REGION" --project="$PROJECT_ID" \
             --source=EventToInsta --entry-point=EventToInsta.CloudFunction --trigger-http --no-allow-unauthenticated \
             --memory=512Mi --timeout=1800s --service-account="$RUNTIME_SA" \
             --set-env-vars="STATE_BUCKET=$STATE_BUCKET,UPLOAD_POST_USER=$UPLOAD_POST_USER" \

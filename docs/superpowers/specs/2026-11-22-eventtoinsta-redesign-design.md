@@ -44,7 +44,7 @@ Heute erzeugt das Tool nur Vorschaubilder für Heimspiele. Der Upload ist durch 
 
 ## Rahmenbedingungen
 
-- .NET 8, SkiaSharp und Topten.RichTextKit sind bereits im Einsatz und bleiben.
+- .NET 10 (seit 24.11.2026, vorher .NET 8), SkiaSharp und Topten.RichTextKit sind bereits im Einsatz und bleiben.
 - Laufzeitumgebung ist eine Google Cloud Function (Functions Framework, `IHttpFunction`). Das Dateisystem ist schreibgeschützt bis auf `/tmp`, und es bleibt kein Zustand zwischen zwei Aufrufen erhalten.
 - Die Cloud Function läuft in UTC. Alle Tages- und Uhrzeitlogik muss in **Europe/Berlin** gerechnet werden. Die Zeiten von der API sind lokale Zeiten.
 - Datenquelle ist `https://www.basketball-bund.net/rest/club/id/{clubId}/actualmatches?justHome=false&rangeDays=7`. Sie liefert die vergangenen und die kommenden 7 Tage, Heim- und Auswärtsspiele. Diese Felder sind relevant und wurden am 22.11.2026 geprüft:
